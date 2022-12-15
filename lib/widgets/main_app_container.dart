@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:provider/provider.dart';
+import 'package:uni_links/uni_links.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/auto_receive_tx_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/lock_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/node_sync_status_bloc.dart';
@@ -19,6 +21,7 @@ import 'package:zenon_syrius_wallet_flutter/utils/format_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/notification_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/notifiers/text_scaling_notifier.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/layout_scaffold/overscroll_remover.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/loading_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/notification_widget.dart';
@@ -77,6 +80,8 @@ class _MainAppContainerState extends State<MainAppContainer>
 
   late StreamSubscription _lockBlockStreamSubscription;
 
+  late StreamSubscription _uriSchemeSubscription;
+
   Timer? _navigateToLockTimer;
 
   late LockBloc _lockBloc;
@@ -89,6 +94,10 @@ class _MainAppContainerState extends State<MainAppContainer>
     skipTraversal: true,
     canRequestFocus: false,
   );
+
+  bool _initialUriIsHandled = false;
+
+  Uri? _pendingUri;
 
   @override
   void initState() {
@@ -107,6 +116,8 @@ class _MainAppContainerState extends State<MainAppContainer>
     _animation = Tween(begin: 1.0, end: 3.0).animate(_animationController);
     kCurrentPage = kWalletInitCompleted ? Tabs.dashboard : Tabs.lock;
     _initLockBlock();
+    _handleInitialUri();
+    _initUriHandler();
     super.initState();
   }
 
@@ -489,6 +500,7 @@ class _MainAppContainerState extends State<MainAppContainer>
     _navigateToLockTimer?.cancel();
     _lockBlockStreamSubscription.cancel();
     _tabController?.dispose();
+    _uriSchemeSubscription.cancel();
     super.dispose();
   }
 
@@ -620,6 +632,10 @@ class _MainAppContainerState extends State<MainAppContainer>
           break;
         case LockEvent.navigateToDashboard:
           _tabController!.animateTo(_getTabChildIndex(Tabs.dashboard));
+          if (_pendingUri != null) {
+            _handleUriScheme(_pendingUri!);
+            _pendingUri = null;
+          }
           break;
         case LockEvent.navigateToLock:
           if (Navigator.of(context).canPop()) {
@@ -644,11 +660,63 @@ class _MainAppContainerState extends State<MainAppContainer>
           break;
         case LockEvent.navigateToPreviousTab:
           _tabController!.animateTo(_tabController!.previousIndex);
+          if (_pendingUri != null) {
+            _handleUriScheme(_pendingUri!);
+            _pendingUri = null;
+          }
           break;
       }
     });
     if (widget.redirectedFromWalletSuccess) {
       _lockBloc.addEvent(LockEvent.countDown);
     }
+  }
+
+  void _initUriHandler() async {
+    if (Platform.isWindows) {
+      _uriSchemeSubscription = uriLinkStream.listen((Uri? uri) {
+        if (!mounted || uri == null) return;
+        kCurrentPage == Tabs.lock ? _pendingUri = uri : _handleUriScheme(uri);
+      }, onError: (Object err) {
+        if (!mounted) return;
+        debugPrint('URI err: $err');
+      });
+    }
+  }
+
+  Future<void> _handleInitialUri() async {
+    // Should only be run once during app's lifecycle
+    if (!_initialUriIsHandled) {
+      _initialUriIsHandled = true;
+      try {
+        _pendingUri = await getInitialUri();
+      } on Exception {
+        debugPrint('Failed to get initial URI');
+      }
+    }
+  }
+
+  void _handleUriScheme(Uri uri) {
+    _showUriActionDialog(
+      Text(
+        'URI: ${uri.toString()}',
+        style: const TextStyle(
+          fontSize: 12,
+          color: Colors.white,
+          decoration: TextDecoration.none,
+        ),
+      ),
+    );
+  }
+
+  void _showUriActionDialog(Widget content) {
+    showCustomDialog(
+        context: context,
+        content: Container(
+          width: 500,
+          height: 400,
+          color: AppColors.darkPrimaryContainer,
+          child: Center(child: content),
+        ));
   }
 }

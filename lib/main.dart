@@ -12,6 +12,7 @@ import 'package:layout/layout.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:uni_links_desktop/uni_links_desktop.dart' as uni_links;
 import 'package:zenon_syrius_wallet_flutter/blocs/accelerator/accelerator_balance_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/auto_receive_tx_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/dashboard/balance_bloc.dart';
@@ -105,6 +106,14 @@ main() async {
       }
     }
   });
+
+  // Register URI scheme listener
+  if (Platform.isMacOS || Platform.isWindows) {
+    uni_links.enableUniLinksDesktop();
+    if (Platform.isWindows) {
+      uni_links.registerProtocol('zenondev');
+    }
+  }
 
   runApp(BetterFeedback(
     child: Builder(
