@@ -5,7 +5,6 @@ import 'package:zenon_syrius_wallet_flutter/model/new_token_data.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/account_block_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/address_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
-import 'package:zenon_syrius_wallet_flutter/utils/extensions.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
 class IssueTokenBloc extends BaseBloc<AccountBlockTemplate> {

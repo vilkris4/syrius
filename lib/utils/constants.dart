@@ -27,6 +27,22 @@ const List<String> kBridgeNetworks = [
   'BNB Smart Chain Mainnet',
 ];
 
+const List<String> kLockDurations = [
+  '3 hours',
+  '12 hours',
+  '24 hours',
+];
+
+const List<String> kHashTypes = [
+  'Default (SHA-3)',
+  'SHA-256',
+];
+
+const List<String> kSwapTypes = [
+  'HTLC',
+  'PTLC',
+];
+
 // Wallet version
 const String kWalletVersion = '0.0.5';
 
@@ -39,6 +55,11 @@ const String kRecipientAddressBox = 'recipient_address_box';
 const String kSharedPrefsBox = 'shared_prefs_box';
 const String kNodesBox = 'nodes_box';
 const String kKeyStoreBox = 'key_store_box';
+const String kHtlcActiveSwapsBox = 'htlc_active_swaps_box';
+
+//const Sring kHtlc
+//const String kHtlcLastCheckedHeightKey = 'htlc_last_checked_height';
+//const String kHtlcCreatedPreimagesKey = 'htlc_created_preimages';
 
 const List<String> kCacheBoxesToBeDeleted = [
   kFavoriteTokensBox,
@@ -48,6 +69,7 @@ const List<String> kCacheBoxesToBeDeleted = [
   kRecipientAddressBox,
   kSharedPrefsBox,
   kNodesBox,
+  kHtlcActiveSwapsBox
 ];
 
 // Swap temporary directory
@@ -76,6 +98,9 @@ const String kWindowSizeHeightKey = 'window_size_height_key';
 const String kWindowPositionXKey = 'window_position_x_key';
 const String kWindowPositionYKey = 'window_position_y_key';
 const String kWindowMaximizedKey = 'window_maximized_key';
+const String kHtlcCreatedSwapsKey = 'htlc_created_swaps_key';
+const String kHtlcDiscoveredSwapsKey = 'htlc_discovered_swaps_key';
+const String kHltcLastCheckpointKey = 'htlc_last_checkpoint_key';
 
 const double kDefaultBorderOutlineWidth = 1.0;
 const double kMinDelegationAmount = 1.0;
@@ -106,6 +131,7 @@ const int kZnnProjectMinimumFunds = 10;
 const int kQsrProjectMinimumFunds = 100;
 const int kAmountInputMaxCharacterLength = 21;
 const int kSecondsPerMomentum = 10;
+const int kHtlcMaxCheckHours = 24;
 
 const List<int> kNormalUsersPlasmaRequirements = [
   kStakePlasmaAmountNeeded,
@@ -197,6 +223,7 @@ const List<Tabs> kTabsWithTextTitles = [
   Tabs.staking,
   Tabs.plasma,
   Tabs.tokens,
+  Tabs.atomicSwap,
 ];
 
 const List<Tabs> kTabsWithIconTitles = [

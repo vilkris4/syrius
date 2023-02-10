@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
-import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
+import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
 
-class AddressesDropdown extends StatelessWidget {
+class LockDurationDropdown extends StatelessWidget {
   final Function(String?)? onChangedCallback;
-  final String? _selectedSelfAddress;
+  final String? _selectedLockDuration;
 
-  const AddressesDropdown(
-    this._selectedSelfAddress,
-    this.onChangedCallback, {
-    Key? key,
-  }) : super(key: key);
+  const LockDurationDropdown(this._selectedLockDuration,
+      this.onChangedCallback, {
+        Key? key,
+      }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: _selectedSelfAddress!,
+      message: _selectedLockDuration!,
       child: FocusableActionDetector(
         mouseCursor: SystemMouseCursors.click,
         child: Container(
@@ -25,14 +24,17 @@ class AddressesDropdown extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5.0),
-            color: Theme.of(context).inputDecorationTheme.fillColor,
+            color: Theme
+                .of(context)
+                .inputDecorationTheme
+                .fillColor,
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               isExpanded: true,
               icon: Container(
                 margin: const EdgeInsets.symmetric(
-                  horizontal: 10.0,
+                  horizontal: 10,
                 ),
                 padding: const EdgeInsets.only(
                   right: 7.5,
@@ -45,20 +47,24 @@ class AddressesDropdown extends StatelessWidget {
                       : AppColors.lightSecondary,
                 ),
               ),
-              value: _selectedSelfAddress,
-              items: kDefaultAddressList.map(
-                (String? value) {
+              value: _selectedLockDuration,
+              items: kLockDurations.map(
+                    (String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(
-                      kAddressLabelMap[value]!,
-                      style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                            color: _selectedSelfAddress == value
-                                ? onChangedCallback != null
-                                    ? AppColors.znnColor
-                                    : AppColors.lightSecondary
-                                : null,
-                          ),
+                      value,
+                      style: Theme
+                          .of(context)
+                          .textTheme
+                          .bodyText2!
+                          .copyWith(
+                        color: _selectedLockDuration == value
+                            ? onChangedCallback != null
+                            ? AppColors.znnColor
+                            : AppColors.lightSecondary
+                            : null,
+                      ),
                     ),
                   );
                 },

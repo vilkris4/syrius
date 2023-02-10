@@ -1,33 +1,40 @@
 import 'package:zenon_syrius_wallet_flutter/blocs/base_bloc.dart';
+import 'package:zenon_syrius_wallet_flutter/main.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/account_block_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/address_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
-class SendPaymentBloc extends BaseBloc<AccountBlockTemplate?> {
-  void sendTransfer({
+class CreateHtlcBloc extends BaseBloc<AccountBlockTemplate?> {
+  void createHtlc({
     required String? fromAddress,
-    required String toAddress,
-    required String amount,
-    required List<int>? data,
     required Token token,
+    required String amount,
+    required Address hashLocked,
+    required int expirationTime,
+    required int hashType,
+    required int keyMaxSize,
+    required List<int> hashLock,
   }) {
     try {
       addEvent(null);
-      AccountBlockTemplate transactionParams = AccountBlockTemplate.send(
-        Address.parse(toAddress),
-        token.tokenStandard,
+      AccountBlockTemplate transactionParams = zenon!.embedded.htlc.create(
+        token,
         amount.toNum().extractDecimals(token.decimals),
-        data,
+        hashLocked,
+        expirationTime,
+        hashType,
+        keyMaxSize,
+        hashLock,
       );
       KeyPair blockSigningKeyPair = kKeyStore!.getKeyPair(
         kDefaultAddressList.indexOf(fromAddress),
       );
       AccountBlockUtils.createAccountBlock(
-        transactionParams,
-        'send transaction',
-        blockSigningKey: blockSigningKeyPair,
-        waitForRequiredPlasma: true,
+          transactionParams,
+          'create swap',
+          blockSigningKey: blockSigningKeyPair,
+          waitForRequiredPlasma: true
       ).then(
         (response) {
           AddressUtils.refreshBalance();
@@ -39,7 +46,7 @@ class SendPaymentBloc extends BaseBloc<AccountBlockTemplate?> {
         },
       );
     } catch (e) {
-      addError(e.toString());
+      addError(e);
     }
   }
 }

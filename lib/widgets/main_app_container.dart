@@ -23,6 +23,7 @@ import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/layout_scaf
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/loading_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/notification_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/accelerator_tab_child.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/atomic_swap_tab_child.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/bridge_tab_child.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/dashboard_tab_child.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/help_tab_child.dart';
@@ -37,6 +38,8 @@ import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/tokens_
 import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/transfer_tab_child.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
+import '../blocs/active_swaps_worker.dart';
+
 enum Tabs {
   dashboard,
   transfer,
@@ -49,6 +52,7 @@ enum Tabs {
   staking,
   plasma,
   tokens,
+  atomicSwap,
   resyncWallet,
   bridge,
   accelerator,
@@ -204,7 +208,7 @@ class _MainAppContainerState extends State<MainAppContainer>
                   ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0,
+                      horizontal: 10.0,
                     ),
                     child: Focus(
                       focusNode: _focusNode,
@@ -281,7 +285,7 @@ class _MainAppContainerState extends State<MainAppContainer>
     return kTabsWithTextTitles
         .map<Tab>(
           (e) => Tab(
-            text: FormatUtils.extractNameFromEnum<Tabs>(e).capitalize(),
+            text: FormatUtils.extractNameFromEnum<Tabs>(e).toTitleCase(),
           ),
         )
         .toList();
@@ -451,6 +455,10 @@ class _MainAppContainerState extends State<MainAppContainer>
           onStepperNotificationSeeMorePressed: () =>
               _navigateTo(Tabs.notifications),
         ),
+        AtomicSwapTabChild(
+          onStepperNotificationSeeMorePressed: () =>
+              _navigateTo(Tabs.notifications),
+        ),
         const BridgeTabChild(),
         AcceleratorTabChild(
           onStepperNotificationSeeMorePressed: () =>
@@ -480,6 +488,7 @@ class _MainAppContainerState extends State<MainAppContainer>
       (timer) => _lockBloc.addEvent(LockEvent.navigateToLock),
     );
     _lockBloc.addEvent(LockEvent.navigateToPreviousTab);
+    //sl<ActiveSwapsWorker>().initCheckHtlcContractBlocks();
   }
 
   @override
@@ -515,10 +524,17 @@ class _MainAppContainerState extends State<MainAppContainer>
     );
     _lockBloc.addEvent(LockEvent.navigateToDashboard);
     _listenToAutoReceiveTxWorkerNotifications();
+    _listenToActiveSwapsWorkerNotifications();
   }
 
   void _listenToAutoReceiveTxWorkerNotifications() {
     sl<AutoReceiveTxWorker>().stream.listen((event) {
+      sl<NotificationsBloc>().addNotification(event);
+    });
+  }
+
+  void _listenToActiveSwapsWorkerNotifications() {
+    sl<ActiveSwapsWorker>().stream.listen((event) {
       sl<NotificationsBloc>().addNotification(event);
     });
   }

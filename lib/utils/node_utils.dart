@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:wakelock/wakelock.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/active_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/auto_receive_tx_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/notifications_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/embedded_node/embedded_node.dart';
@@ -20,10 +21,23 @@ int _kHeight = 0;
 
 class NodeUtils {
   static Future<bool> establishConnectionToNode(String url) async {
-    return await zenon!.wsClient.initialize(
+    var connectionStatus = await zenon!.wsClient.initialize(
       url,
       retry: false,
     );
+
+    if (connectionStatus) {
+      try {
+        await zenon!.ledger.getFrontierMomentum().then((value) {
+          netId = value.chainIdentifier.toInt();
+        });
+      }
+      catch (e) {
+        rethrow;
+      }
+    }
+
+    return connectionStatus;
   }
 
   static closeEmbeddedNode() async {
@@ -90,6 +104,8 @@ class NodeUtils {
       Future.delayed(const Duration(seconds: 30))
           .then((value) => NotificationUtils.sendNodeSyncingNotification());
       _initListenForUnreceivedAccountBlocks(allResponseBroadcaster);
+      _initListenForHtlcAccountBlocks(allResponseBroadcaster);
+      //sl<ActiveSwapsWorker>().initCheckHtlcContractBlocks();
     });
   }
 
@@ -144,6 +160,25 @@ class NodeUtils {
           }
         }
       },
+    );
+  }
+
+  static void _initListenForHtlcAccountBlocks(Stream broadcaster) {
+    broadcaster.listen(
+            (event) {
+          if (event!["method"] == "ledger.subscription") {
+            for (var i = 0; i < event["params"]["result"].length; i += 1) {
+              var tx = event["params"]["result"][i];
+              if (tx["toAddress"] != htlcAddress.toString()) {
+                continue;
+              } else {
+                var hash = tx["hash"];
+                //sl<ActiveSwapsWorker>().addHash(Hash.parse(hash));
+                sl<ActiveSwapsWorker>().parseHtlcContractBlocks();
+              }
+            }
+          }
+        }
     );
   }
 

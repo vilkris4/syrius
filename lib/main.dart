@@ -13,6 +13,7 @@ import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/accelerator/accelerator_balance_bloc.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/active_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/auto_receive_tx_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/dashboard/balance_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/lock_bloc.dart';
@@ -66,6 +67,10 @@ main() async {
   // Register Hive adapters
   Hive.registerAdapter(NotificationTypeAdapter());
   Hive.registerAdapter(WalletNotificationAdapter());
+  //Hive.registerAdapter(HtlcInfoAdapter());
+  //Hive.registerAdapter(HashAdapter());
+  //Hive.registerAdapter(AddressAdapter());
+  //Hive.registerAdapter(TokenStandardAdapter());
 
   if (sharedPrefsService == null) {
     sharedPrefsService = await sl.getAsync<SharedPrefsService>();
@@ -129,6 +134,7 @@ void setup() {
       (() => SharedPrefsService.getInstance().then((value) => value!)));
 
   sl.registerSingleton<AutoReceiveTxWorker>(AutoReceiveTxWorker.getInstance());
+  sl.registerSingleton<ActiveSwapsWorker>(ActiveSwapsWorker.getInstance());
 
   sl.registerSingleton<ReceivePort>(ReceivePort(),
       instanceName: 'embeddedStoppedPort');
@@ -143,6 +149,7 @@ void setup() {
   sl.registerSingleton<NotificationsBloc>(NotificationsBloc());
   sl.registerSingleton<AcceleratorBalanceBloc>(AcceleratorBalanceBloc());
   sl.registerSingleton<PowGeneratingStatusBloc>(PowGeneratingStatusBloc());
+  //sl.registerSingleton<HtlcListBloc>(HtlcListBloc());
 }
 
 class MyApp extends StatefulWidget {

@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
-import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
+import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
 
-class AddressesDropdown extends StatelessWidget {
+class HashTypeDropdown extends StatelessWidget {
   final Function(String?)? onChangedCallback;
-  final String? _selectedSelfAddress;
+  final String? _selectedHashType;
 
-  const AddressesDropdown(
-    this._selectedSelfAddress,
-    this.onChangedCallback, {
-    Key? key,
-  }) : super(key: key);
+  const HashTypeDropdown(this._selectedHashType,
+      this.onChangedCallback, {
+        Key? key,
+      }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: _selectedSelfAddress!,
+      message: _selectedHashType!,
       child: FocusableActionDetector(
         mouseCursor: SystemMouseCursors.click,
         child: Container(
@@ -25,7 +24,10 @@ class AddressesDropdown extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5.0),
-            color: Theme.of(context).inputDecorationTheme.fillColor,
+            color: Theme
+                .of(context)
+                .inputDecorationTheme
+                .fillColor,
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
@@ -45,20 +47,24 @@ class AddressesDropdown extends StatelessWidget {
                       : AppColors.lightSecondary,
                 ),
               ),
-              value: _selectedSelfAddress,
-              items: kDefaultAddressList.map(
-                (String? value) {
+              value: _selectedHashType,
+              items: kHashTypes.map(
+                    (String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(
-                      kAddressLabelMap[value]!,
-                      style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                            color: _selectedSelfAddress == value
-                                ? onChangedCallback != null
-                                    ? AppColors.znnColor
-                                    : AppColors.lightSecondary
-                                : null,
-                          ),
+                      value,
+                      style: Theme
+                          .of(context)
+                          .textTheme
+                          .bodyText2!
+                          .copyWith(
+                        color: _selectedHashType == value
+                            ? onChangedCallback != null
+                            ? AppColors.znnColor
+                            : AppColors.lightSecondary
+                            : null,
+                      ),
                     ),
                   );
                 },

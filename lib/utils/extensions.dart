@@ -1,12 +1,5 @@
 import 'dart:math' show pow;
-
-extension StringExtensions on String {
-  String capitalize() {
-    return '${this[0].toUpperCase()}${toLowerCase().substring(1)}';
-  }
-
-  num toNum() => num.parse(this);
-}
+import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
 extension FixedNumDecimals on double {
   String toStringFixedNumDecimals(int numDecimals) {
@@ -48,4 +41,8 @@ extension ZipTwoLists on List {
       },
     );
   }
+}
+
+extension StringCasingExtension on String {
+  String toTitleCase() => replaceAll(RegExp(' +'), ' ').split(' ').map((str) => str.capitalize()).join(' ');
 }

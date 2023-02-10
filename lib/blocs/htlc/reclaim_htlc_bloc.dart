@@ -2,21 +2,23 @@ import 'package:zenon_syrius_wallet_flutter/blocs/base_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/account_block_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/address_utils.dart';
+import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
-class StakingOptionsBloc extends BaseBloc<AccountBlockTemplate?> {
-  void stakeForQsr(
-    Duration stakeDuration,
-    String amount,
-  ) {
+class ReclaimHtlcBloc extends BaseBloc<AccountBlockTemplate?> {
+  void reclaimHtlc({
+    required Hash id,
+    required Address? sender,
+  }) {
     try {
       addEvent(null);
-      AccountBlockTemplate transactionParams = zenon!.embedded.stake.stake(
-        stakeDuration.inSeconds,
-        amount.toNum().extractDecimals(znnDecimals),
+      AccountBlockTemplate transactionParams = zenon!.embedded.htlc.reclaim(id);
+      KeyPair blockSigningKeyPair = kKeyStore!.getKeyPair(
+        kDefaultAddressList.indexOf(sender.toString()),
       );
-      AccountBlockUtils.createAccountBlock(transactionParams, 'create stake',
-              waitForRequiredPlasma: true)
+      AccountBlockUtils.createAccountBlock(transactionParams, 'reclaim swap',
+          blockSigningKey: blockSigningKeyPair,
+          waitForRequiredPlasma: true)
           .then(
         (response) {
           AddressUtils.refreshBalance();

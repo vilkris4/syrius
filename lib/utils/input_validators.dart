@@ -3,6 +3,7 @@ import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/logger.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
+import 'package:convert/convert.dart';
 
 class InputValidators {
   static String kEVMAddressRegex = r'^(0x)([a-fA-F0-9]){40}$';
@@ -54,14 +55,13 @@ class InputValidators {
     }
   }
 
-  static String? correctValue(
-    String? value,
-    num? maxValue,
-    int decimals, {
-    num min = 0,
-    bool canBeEqualToMin = false,
-    bool canBeBlank = false,
-  }) {
+  static String? correctValue(String? value,
+      num? maxValue,
+      int decimals, {
+        num min = 0,
+        bool canBeEqualToMin = false,
+        bool canBeBlank = false,
+      }) {
     if (value != null) {
       try {
         if (maxValue == 0) {
@@ -91,14 +91,14 @@ class InputValidators {
           return min <= inputNum && inputNum <= maxValue
               ? null
               : maxValue == min
-                  ? 'Value must be $min'
-                  : 'Value must be between $min and $maxValue';
+              ? 'Value must be $min'
+              : 'Value must be between $min and $maxValue';
         }
         return min < inputNum && inputNum <= maxValue
             ? null
             : maxValue == min
-                ? 'Value must be $min'
-                : 'Value must be between $min and $maxValue';
+            ? 'Value must be $min'
+            : 'Value must be between $min and $maxValue';
       } catch (e) {
         Logger.logError(e);
         return 'Error';
@@ -131,7 +131,7 @@ class InputValidators {
         return 'Password not strong enough';
       }
       String pattern =
-          r'''^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[`~!@#$%^&*()\-_=+\[\]\{\}\\|;:",<.>\/\?']).{8,}$''';
+      r'''^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[`~!@#$%^&*()\-_=+\[\]\{\}\\|;:",<.>\/\?']).{8,}$''';
       RegExp regExp = RegExp(pattern);
       if (regExp.hasMatch(value)) {
         return null;
@@ -178,5 +178,35 @@ class InputValidators {
       return null;
     }
     return 'Invalid URL';
+  }
+
+  static String? checkHash(String? value) {
+    try {
+      if (Hash.parse(value!).runtimeType == Hash) {
+        return null;
+      }
+    } catch (e) {
+      return 'Invalid hash';
+    }
+    return 'Invalid hash';
+  }
+
+  static Future<String?> checkSecret(HtlcInfo htlc, String? value) async {
+    if (value != null) {
+      try {
+        Hash preimageCheck;
+        (htlc.hashType == 1) ?
+        preimageCheck =
+            Hash.fromBytes(await Crypto.sha256Bytes(hex.decode(value))) :
+        preimageCheck = (Hash.digest(hex.decode(value)));
+
+        if (preimageCheck == Hash.fromBytes(htlc.hashLock!)) {
+          return null;
+        }
+      } catch (e) {
+        return 'Invalid secret';
+      }
+    }
+    return 'Invalid secret';
   }
 }

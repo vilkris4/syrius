@@ -58,9 +58,10 @@ dependencies:
       path: plugins/file_selector/file_selector_linux
       ref: 38c4c9024665483cf4afadd768fdfcb32e43bd64
   znn_sdk_dart:
+    #path: ..\znn_sdk_dart
     git:
-      url: https://github.com/zenon-network/znn_sdk_dart.git
-      ref: 367ddc7fbfefb6484d7553d9ac7e4532003a7008
+      url: https://github.com/sol-sanctum/znn_sdk_dart.git
+      ref: spork_htlc
   znn_swap_utility:
     git:
       url: https://github.com/zenon-network/znn_swap_utility.git
