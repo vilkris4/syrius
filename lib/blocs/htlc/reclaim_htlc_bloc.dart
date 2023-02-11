@@ -8,17 +8,16 @@ import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 class ReclaimHtlcBloc extends BaseBloc<AccountBlockTemplate?> {
   void reclaimHtlc({
     required Hash id,
-    required Address? sender,
+    required Address? timeLocked,
   }) {
     try {
       addEvent(null);
       AccountBlockTemplate transactionParams = zenon!.embedded.htlc.reclaim(id);
       KeyPair blockSigningKeyPair = kKeyStore!.getKeyPair(
-        kDefaultAddressList.indexOf(sender.toString()),
+        kDefaultAddressList.indexOf(timeLocked.toString()),
       );
       AccountBlockUtils.createAccountBlock(transactionParams, 'reclaim swap',
-          blockSigningKey: blockSigningKeyPair,
-          waitForRequiredPlasma: true)
+              blockSigningKey: blockSigningKeyPair, waitForRequiredPlasma: true)
           .then(
         (response) {
           AddressUtils.refreshBalance();

@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:zenon_syrius_wallet_flutter/utils/format_utils.dart';
+import 'package:zenon_syrius_wallet_flutter/utils/input_validators.dart';
+import 'package:zenon_syrius_wallet_flutter/utils/zts_utils.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dropdown/coin_dropdown.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/amount_suffix_widgets.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/input_field.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
-
-import '../../../utils/format_utils.dart';
-import '../../../utils/input_validators.dart';
-import '../../../utils/zts_utils.dart';
-import '../dropdown/coin_dropdown.dart';
-import 'amount_suffix_widgets.dart';
-import 'input_field.dart';
 
 class AmountInputField extends StatefulWidget {
   final TextEditingController controller;
   final AccountInfo accountInfo;
   final void Function(Token, bool)? onChanged;
-  final VoidCallback? onValueChanged;
   final double? valuePadding;
   final Color? textColor;
   final Token? initialToken;
@@ -20,7 +18,6 @@ class AmountInputField extends StatefulWidget {
   const AmountInputField({
     required this.controller,
     required this.accountInfo,
-    this.onValueChanged,
     this.onChanged,
     this.valuePadding,
     this.textColor,
@@ -38,7 +35,6 @@ class _AmountInputFieldState extends State<AmountInputField> {
   final List<Token?> _tokensWithBalance = [];
   Token? _selectedToken;
   bool valid = false;
-
 
   @override
   void initState() {
@@ -60,24 +56,22 @@ class _AmountInputFieldState extends State<AmountInputField> {
         inputFormatters: FormatUtils.getAmountTextInputFormatters(
           widget.controller.text,
         ),
-        validator: (value) =>
-            InputValidators.correctValue(
-              value,
-              widget.accountInfo.getBalanceWithDecimals(
-                _selectedToken!.tokenStandard,
-              ),
-              _selectedToken!.decimals,
-            ),
+        validator: (value) => InputValidators.correctValue(
+          value,
+          widget.accountInfo.getBalanceWithDecimals(
+            _selectedToken!.tokenStandard,
+          ),
+          _selectedToken!.decimals,
+        ),
         controller: widget.controller,
         suffixIcon: _getAmountSuffix(),
         hintText: 'Amount',
       ),
-      onChanged: () =>
-      (widget.onChanged != null) ? widget.onChanged!(
-          _selectedToken!, (_isInputValid()) ? true : false) : null,
+      onChanged: () => (widget.onChanged != null)
+          ? widget.onChanged!(_selectedToken!, (_isInputValid()) ? true : false)
+          : null,
     );
   }
-
 
   Widget _getAmountSuffix() {
     return Row(
@@ -99,24 +93,20 @@ class _AmountInputFieldState extends State<AmountInputField> {
     );
   }
 
-
-  void _onMaxPressed() =>
-      setState(() {
+  void _onMaxPressed() => setState(() {
         num maxBalance = widget.accountInfo.getBalanceWithDecimals(
           _selectedToken!.tokenStandard,
         );
         widget.controller.text = maxBalance.toString();
       });
 
-
-  Widget _getCoinDropdown() =>
-      CoinDropdown(
+  Widget _getCoinDropdown() => CoinDropdown(
         _tokensWithBalance,
         _selectedToken!,
-            (value) {
+        (value) {
           if (_selectedToken != value) {
             setState(
-                  () {
+              () {
                 _selectedToken = value!;
                 _isInputValid();
                 widget.onChanged!(_selectedToken!, _isInputValid());
@@ -142,16 +132,11 @@ class _AmountInputFieldState extends State<AmountInputField> {
           _selectedToken!.tokenStandard,
         ),
         _selectedToken!.decimals,
-      ) == null;
+      ) ==
+      null;
 
-
-  /*
   @override
   void dispose() {
-    widget.controller.dispose();
     super.dispose();
   }
-  */
-
 }
-

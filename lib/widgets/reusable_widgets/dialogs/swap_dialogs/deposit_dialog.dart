@@ -40,10 +40,10 @@ showDepositDialog({
   num ratio = (valid) ? controller.text.toNum() : 0;
   bool ratioReversed = false;
   StreamController _streamController = StreamController<String>.broadcast();
-  Token _selectedToken = (token.tokenStandard.toString() ==
-      kZnnCoin.tokenStandard.toString())
-      ? kQsrCoin
-      : kZnnCoin;
+  Token _selectedToken =
+      (token.tokenStandard.toString() == kZnnCoin.tokenStandard.toString())
+          ? kQsrCoin
+          : kZnnCoin;
   bool _creatingSwap = (title == 'Create Swap');
 
   showDialog(
@@ -58,10 +58,7 @@ showDepositDialog({
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16.0),
             ),
-            backgroundColor: Theme
-                .of(context)
-                .colorScheme
-                .primaryContainer,
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
             content: SizedBox(
               width: 495, //475.0,
               child: Column(
@@ -75,10 +72,7 @@ showDepositDialog({
                       ),
                       Text(
                         title,
-                        style: Theme
-                            .of(context)
-                            .textTheme
-                            .headline5,
+                        style: Theme.of(context).textTheme.headline5,
                       ),
                       const Spacer(),
                       ElevatedButton(
@@ -87,15 +81,9 @@ showDepositDialog({
                         },
                         style: ElevatedButton.styleFrom(
                           foregroundColor:
-                          Theme
-                              .of(context)
-                              .colorScheme
-                              .inverseSurface,
+                              Theme.of(context).colorScheme.inverseSurface,
                           backgroundColor:
-                          Theme
-                              .of(context)
-                              .colorScheme
-                              .primaryContainer,
+                              Theme.of(context).colorScheme.primaryContainer,
                           minimumSize: Size.zero,
                           padding: EdgeInsets.zero,
                         ),
@@ -128,9 +116,7 @@ showDepositDialog({
                     visible: !_creatingSwap,
                     child: Flexible(
                       child: StreamBuilder<Map<String, AccountInfo>?>(
-                        stream: sl
-                            .get<BalanceBloc>()
-                            .stream,
+                        stream: sl.get<BalanceBloc>().stream,
                         builder: (_, snapshot) {
                           if (snapshot.hasError) {
                             return SyriusErrorWidget(snapshot.error!);
@@ -140,12 +126,11 @@ showDepositDialog({
                             if (snapshot.hasData) {
                               return AmountInputField(
                                 controller: controller,
-                                accountInfo:
-                                (snapshot.data![htlc.hashLocked.toString()]!),
+                                accountInfo: (snapshot
+                                    .data![htlc.hashLocked.toString()]!),
+                                //TODO: check if this is correct, timelocked???
                                 valuePadding: 20.0,
-                                textColor:
-                                Theme
-                                    .of(context)
+                                textColor: Theme.of(context)
                                     .colorScheme
                                     .inverseSurface,
                                 initialToken: _selectedToken,
@@ -156,11 +141,11 @@ showDepositDialog({
                                     if (isValid) {
                                       ratio = (!ratioReversed)
                                           ? AmountUtils.addDecimals(
-                                          htlc.amount, token.decimals) /
-                                          controller.text.toNum()
+                                                  htlc.amount, token.decimals) /
+                                              controller.text.toNum()
                                           : controller.text.toNum() /
-                                          AmountUtils.addDecimals(
-                                              htlc.amount, token.decimals);
+                                              AmountUtils.addDecimals(
+                                                  htlc.amount, token.decimals);
                                     } else {
                                       ratio = 0;
                                     }
@@ -183,153 +168,135 @@ showDepositDialog({
                     visible: !_creatingSwap,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10.0),
-                      child: Row(
-                          children: [
-                            Expanded(
-                                child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Row(children: [
-                                      const SizedBox(
-                                        width: 20.0,
-                                      ),
-                                      Text(
-                                          (!ratioReversed)
-                                              ? "1 ${token.symbol} = ${ratio
-                                              .toStringAsFixed(
-                                              5)} ${_selectedToken.symbol}"
-                                              : "1 ${_selectedToken
-                                              .symbol} = ${ratio
-                                              .toStringAsFixed(5)} ${token
-                                              .symbol}",
-                                          style: const TextStyle(
-                                            color:
+                      child: Row(children: [
+                        Expanded(
+                            child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Row(children: [
+                                  const SizedBox(
+                                    width: 20.0,
+                                  ),
+                                  Text(
+                                      (!ratioReversed)
+                                          ? "1 ${token.symbol} = ${ratio.toStringAsFixed(5)} ${_selectedToken.symbol}"
+                                          : "1 ${_selectedToken.symbol} = ${ratio.toStringAsFixed(5)} ${token.symbol}",
+                                      style: const TextStyle(
+                                        color:
                                             AppColors.unselectedSeedChoiceColor,
-                                          )),
-                                      const SizedBox(
-                                        width: 10.0,
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          setState(() {
-                                            ratioReversed = !ratioReversed;
-                                            ratio = 1 / ratio;
-                                          });
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          foregroundColor: Theme
-                                              .of(context)
-                                              .colorScheme
-                                              .inverseSurface,
-                                          backgroundColor: Theme
-                                              .of(context)
-                                              .colorScheme
-                                              .primaryContainer,
-                                          minimumSize: Size.zero,
-                                          padding: EdgeInsets.zero,
-                                        ),
-                                        child: const Icon(
-                                          Feather.refresh_cw,
-                                          color: AppColors
-                                              .unselectedSeedChoiceColor,
-                                          size: 15.0,
-                                        ),
-                                      ),
-                                    ]))),
-                            Align(
-                              alignment: Alignment.bottomCenter,
-                              child: Icon(
-                                AntDesign.arrowdown,
-                                color: Theme
-                                    .of(context)
-                                    .colorScheme
-                                    .inverseSurface,
-                                size: 25,
-                              ),
-                            ),
-                            const Spacer(),
-                          ]),
+                                      )),
+                                  const SizedBox(
+                                    width: 10.0,
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        ratioReversed = !ratioReversed;
+                                        (1 / ratio).isInfinite
+                                            ? ratio = 0
+                                            : ratio = 1 / ratio;
+                                      });
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      foregroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .inverseSurface,
+                                      backgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .primaryContainer,
+                                      minimumSize: Size.zero,
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                    child: const Icon(
+                                      Feather.refresh_cw,
+                                      color:
+                                          AppColors.unselectedSeedChoiceColor,
+                                      size: 15.0,
+                                    ),
+                                  ),
+                                ]))),
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Icon(
+                            AntDesign.arrowdown,
+                            color: Theme.of(context).colorScheme.inverseSurface,
+                            size: 25,
+                          ),
+                        ),
+                        const Spacer(),
+                      ]),
                     ),
                   ),
                   kVerticalSpacing,
                   DialogInfoItemWidget(
-                    id: (_creatingSwap)
-                        ? "Sending"
-                        : "You receive",
+                    id: (_creatingSwap) ? "Sending" : "You receive",
                     value: AmountUtils.addDecimals(htlc.amount, token.decimals)
                         .toString(),
                     address: Address.parse(htlc.tokenStandard.toString()),
                     token: token,
                   ),
-                  //(preimage != null) ? kVerticalSpacing : Container(),
-                  Visibility(
-                    visible: preimage?.isNotEmpty ?? false,
-                    child: Row(
-                        children: [
-                          Flexible(
-                            fit: FlexFit.tight,
-                            child: Container(
-                                decoration: BoxDecoration(
-                                  color: Theme
-                                      .of(context)
-                                      .dividerTheme
-                                      .color,
-                                  border: Border.all(
-                                      color: Theme
-                                          .of(context)
-                                          .colorScheme
-                                          .tertiaryContainer,
-                                      style: BorderStyle.solid
+                  kVerticalSpacing,
+                  (preimage == null)
+                      ? Container()
+                      : Visibility(
+                          visible: preimage.isNotEmpty ?? false,
+                          child: Row(children: [
+                            Flexible(
+                              fit: FlexFit.tight,
+                              child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).dividerTheme.color,
+                                    border: Border.all(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .tertiaryContainer,
+                                        style: BorderStyle.solid),
+                                    borderRadius: BorderRadius.circular(7.5),
                                   ),
-                                  borderRadius: BorderRadius.circular(7.5),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(15.0),
-                                      child: Text(
-                                          'Copy and save this secret. You will need it to unlock the counter deposit.',
-                                          style: Theme
-                                              .of(context)
-                                              .textTheme
-                                              .subtitle1,
-                                          textScaleFactor: 1.2
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(15.0),
+                                        child: Text(
+                                            'Copy and save this secret. You will need it to unlock the counter deposit.',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .subtitle1,
+                                            textScaleFactor: 1.2),
                                       ),
-                                    ),
-                                    Padding(
+                                      Padding(
                                         padding: const EdgeInsets.only(
-                                            bottom: 15.0,
-                                            left: 15.0
-                                        ),
+                                            bottom: 15.0, left: 15.0),
                                         child: Row(
-                                            children: [
-                                              Text(
-                                                "preimage",
-                                                //FormatUtils.formatLongString(
-                                               //     FormatUtils.encodeHexString(preimage!)),
-                                                style: Theme
-                                                    .of(context)
-                                                    .textTheme
-                                                    .bodyText2,
-                                                textScaleFactor: 1.2,
-                                              ),
-                                              CopyToClipboardIcon(
-                                                //FormatUtils.encodeHexString(preimage),
-                                                "preimage",
-                                                iconColor: AppColors.darkHintTextColor,
-                                                materialTapTargetSize: MaterialTapTargetSize
-                                                    .shrinkWrap,
-                                              ),
-                                            ],
+                                          children: [
+                                            Text(
+                                              //"preimage",
+                                              FormatUtils.formatLongString(
+                                                  FormatUtils.encodeHexString(
+                                                      preimage!)),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2,
+                                              textScaleFactor: 1.2,
+                                            ),
+                                            CopyToClipboardIcon(
+                                              FormatUtils.encodeHexString(
+                                                  preimage),
+                                              iconColor:
+                                                  AppColors.darkHintTextColor,
+                                              materialTapTargetSize:
+                                                  MaterialTapTargetSize
+                                                      .shrinkWrap,
+                                            ),
+                                          ],
                                         ),
-                                    ),
-                                  ],
-                                )
-                            ),
-                          )
-                        ]),
-
-                  ),
+                                      ),
+                                    ],
+                                  )),
+                            )
+                          ]),
+                        ),
                   kVerticalSpacing,
                   kVerticalSpacing,
                   Column(
@@ -338,10 +305,7 @@ showDepositDialog({
                       TextButton(
                         child: Text(
                           title,
-                          style: Theme
-                              .of(context)
-                              .textTheme
-                              .bodyText1,
+                          style: Theme.of(context).textTheme.bodyText1,
                         ),
                         onPressed: () async {
                           if (valid == true || _creatingSwap) {
@@ -373,10 +337,7 @@ showDepositDialog({
                       borderRadius: BorderRadius.circular(
                         8.0,
                       ),
-                      color: Theme
-                          .of(context)
-                          .dividerTheme
-                          .color,
+                      color: Theme.of(context).dividerTheme.color,
                     ),
                     child: Column(
                       children: [
@@ -387,10 +348,7 @@ showDepositDialog({
                                 padding: const EdgeInsets.only(right: 10.0),
                                 child: Text(
                                   '●',
-                                  style: Theme
-                                      .of(context)
-                                      .textTheme
-                                      .subtitle1,
+                                  style: Theme.of(context).textTheme.subtitle1,
                                 ),
                               ),
                             ]),
@@ -401,8 +359,7 @@ showDepositDialog({
                                     child: RichText(
                                       text: TextSpan(
                                         text: 'The recipient has until ',
-                                        style: Theme
-                                            .of(context)
+                                        style: Theme.of(context)
                                             .textTheme
                                             .subtitle1,
                                         children: [
@@ -410,16 +367,14 @@ showDepositDialog({
                                             text: FormatUtils.formatDate(
                                                 htlc.expirationTime * 1000,
                                                 dateFormat:
-                                                "hh:mm a, MM/dd/yyyy"),
-                                            style: Theme
-                                                .of(context)
+                                                    "hh:mm a, MM/dd/yyyy"),
+                                            style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
                                           ),
                                           TextSpan(
                                             text: " to unlock the deposit.",
-                                            style: Theme
-                                                .of(context)
+                                            style: Theme.of(context)
                                                 .textTheme
                                                 .subtitle1,
                                           ),
@@ -447,10 +402,8 @@ showDepositDialog({
                                   padding: const EdgeInsets.only(right: 10.0),
                                   child: Text(
                                     '●',
-                                    style: Theme
-                                        .of(context)
-                                        .textTheme
-                                        .subtitle1,
+                                    style:
+                                        Theme.of(context).textTheme.subtitle1,
                                   ),
                                 ),
                               ]),
@@ -462,50 +415,43 @@ showDepositDialog({
                                         child: RichText(
                                           text: TextSpan(
                                             text: 'You will receive ',
-                                            style: Theme
-                                                .of(context)
+                                            style: Theme.of(context)
                                                 .textTheme
                                                 .subtitle1,
                                             children: [
                                               TextSpan(
                                                 text:
-                                                "${AmountUtils.addDecimals(
-                                                    htlc.amount, token.decimals)
-                                                    .toString()} ${token
-                                                    .symbol} ",
-                                                style: Theme
-                                                    .of(context)
+                                                    "${AmountUtils.addDecimals(htlc.amount, token.decimals).toString()} ${token.symbol} ",
+                                                style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2,
                                               ),
                                               TextSpan(
                                                 text: "into ",
-                                                style: Theme
-                                                    .of(context)
+                                                style: Theme.of(context)
                                                     .textTheme
                                                     .subtitle1,
                                               ),
                                               TextSpan(
                                                 text: (kDefaultAddressList
-                                                    .contains(htlc.hashLocked
-                                                    .toString()))
+                                                        .contains(htlc
+                                                            .hashLocked
+                                                            .toString()))
                                                     ? AddressUtils.getLabel(htlc
-                                                    .hashLocked
-                                                    .toString())
+                                                        .hashLocked
+                                                        .toString())
                                                     : FormatUtils
-                                                    .formatLongString(htlc
-                                                    .hashLocked
-                                                    .toString()),
-                                                style: Theme
-                                                    .of(context)
+                                                        .formatLongString(htlc
+                                                            .hashLocked
+                                                            .toString()),
+                                                style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2,
                                               ),
                                               TextSpan(
                                                 text:
-                                                " after the recipient unlocks the deposit.",
-                                                style: Theme
-                                                    .of(context)
+                                                    " after the recipient unlocks the deposit.",
+                                                style: Theme.of(context)
                                                     .textTheme
                                                     .subtitle1,
                                               ),
@@ -530,10 +476,7 @@ showDepositDialog({
                                 padding: const EdgeInsets.only(right: 10.0),
                                 child: Text(
                                   '●',
-                                  style: Theme
-                                      .of(context)
-                                      .textTheme
-                                      .subtitle1,
+                                  style: Theme.of(context).textTheme.subtitle1,
                                 ),
                               ),
                             ]),
@@ -545,9 +488,8 @@ showDepositDialog({
                                       child: RichText(
                                         text: TextSpan(
                                           text:
-                                          'The deposit can be reclaimed if the recipient does not unlock it before it expires.',
-                                          style: Theme
-                                              .of(context)
+                                              'The deposit can be reclaimed if the recipient does not unlock it before it expires.',
+                                          style: Theme.of(context)
                                               .textTheme
                                               .subtitle1,
                                         ),

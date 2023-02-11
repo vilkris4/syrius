@@ -72,14 +72,14 @@ class HashlockSuffixClipboardWidget extends RawMaterialButton {
     required BuildContext context,
     Key? key,
   }) : super(
-    key: key,
-    child: const Icon(
-      Icons.content_paste,
-      color: AppColors.darkHintTextColor,
-      size: 15.0,
-    ),
-    shape: const CircleBorder(),
-    onPressed: onPressed,
-    constraints: const BoxConstraints(),
-  );
+          key: key,
+          child: const Icon(
+            Icons.content_paste,
+            color: AppColors.darkHintTextColor,
+            size: 15.0,
+          ),
+          shape: const CircleBorder(),
+          onPressed: onPressed,
+          constraints: const BoxConstraints(),
+        );
 }

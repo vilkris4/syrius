@@ -14,7 +14,6 @@ import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
 import '../utils/format_utils.dart';
 
-
 class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
   bool debug = true; // will be removed after testing
   bool running = false;
@@ -25,6 +24,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
   List<Hash> cachedReclaims = [];
 
   StreamController controller = StreamController.broadcast();
+
   // How to inform Active Swaps Card of a change to cachedSwaps
   // controller.add(cachedSwaps);
 
@@ -60,19 +60,19 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
     print("starting _getContractHeightXHoursAgo");
     int _height = await _getContractHeightXHoursAgo();
     print("finished _getContractHeightXHoursAgo");
-    int _currentHeight = ((await zenon!.ledger.getFrontierAccountBlock(htlcAddress))?.height)!;
+    int _currentHeight =
+        ((await zenon!.ledger.getFrontierAccountBlock(htlcAddress))?.height)!;
     if (lastCheckpoint <= _height && _height < _currentHeight) {
       print("parsing htlc contract blocks from $_height to $_currentHeight");
       await _parseHtlcContractBlocks(_height);
     } else if (lastCheckpoint > _height && lastCheckpoint < _currentHeight) {
-      print("parsing htlc contract blocks from $lastCheckpoint to $_currentHeight");
+      print(
+          "parsing htlc contract blocks from $lastCheckpoint to $_currentHeight");
       await _parseHtlcContractBlocks(lastCheckpoint);
-    }
-    else {
+    } else {
       print("$_currentHeight: no new htlc activity");
     }
     lastCheckpoint = _currentHeight;
-
 
     print("parseHtlcContractBlocks() finished");
 
@@ -82,10 +82,11 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
   // check all account blocks for the htlc contract from _startingHeight until now
   // then set _lastCheckedContractHeight to the last contract height checked
   Future<void> _parseHtlcContractBlocks(int _startingHeight) async {
-
-    AccountBlock _frontierContractBlock = (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!;
+    AccountBlock _frontierContractBlock =
+        (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!;
     int _delta = _frontierContractBlock.height - _startingHeight + 1;
-    AccountBlockList _contractBlocks = await zenon!.ledger.getAccountBlocksByHeight(htlcAddress, _startingHeight, _delta);
+    AccountBlockList _contractBlocks = await zenon!.ledger
+        .getAccountBlocksByHeight(htlcAddress, _startingHeight, _delta);
 
     for (var block in _contractBlocks.list!) {
       if (block.blockType == BlockTypeEnum.contractReceive.index) {
@@ -99,8 +100,8 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
               if (eq(AbiFunction.extractSignature(entry.encodeSignature()),
                   AbiFunction.extractSignature(_block.data))) {
                 f = AbiFunction(entry.name!, entry.inputs!);
-             //   (debug) ? print("found function ${f.name} and ${f.inputs} in ${_block
-             //       .hash} with data ${f.decode(_block.data)} || sent from: ${_block.address}") :null;
+                //   (debug) ? print("found function ${f.name} and ${f.inputs} in ${_block
+                //       .hash} with data ${f.decode(_block.data)} || sent from: ${_block.address}") :null;
               }
             }
             if (f.name.toString() == "CreateHtlc") {
@@ -108,7 +109,8 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
               print(data);
               //print("Found CreateHtlc in ${_block.hash}, sent from: ${_block.address}");
 
-              if (kDefaultAddressList.contains(_block.address.toString()) || kDefaultAddressList.contains(data[0].toString())) {
+              if (kDefaultAddressList.contains(_block.address.toString()) ||
+                  kDefaultAddressList.contains(data[0].toString())) {
                 final json = '{ '
                     '"id": "${_block.hash}",'
                     '"timeLocked": "${_block.address}",'
@@ -127,38 +129,35 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
                 }
                 //controller.add(cachedSwaps);
               }
-            }
-            else if (f.name.toString() == "UnlockHtlc") {
+            } else if (f.name.toString() == "UnlockHtlc") {
               var args = f.decode(_block.data);
-           //   print("Found UnlockHtlc in ${_block.hash}, sent from: ${_block.address}");
+              //   print("Found UnlockHtlc in ${_block.hash}, sent from: ${_block.address}");
               final Hash hashId = args[0];
               final String preimage = hex.encode(args[1]);
-            //  (debug)
-           //       ? print(
-           //       "${_block.hash.toString()}: htlc id ${hashId.toString()} unlocked with pre-image: $preimage")
-           //       : null;
+              //  (debug)
+              //       ? print(
+              //       "${_block.hash.toString()}: htlc id ${hashId.toString()} unlocked with pre-image: $preimage")
+              //       : null;
               await removeSwap(hashId);
               //TODO: uncomment this line when auto unlock is implemented
               ///_autoUnlock(hashId, preimage);
               //cachedUnlocks.add({hashId : preimage});
               //controller.add(cachedSwaps);
-            }
-            else if (f.name.toString() == "ReclaimHtlc") {
+            } else if (f.name.toString() == "ReclaimHtlc") {
               var args = f.decode(_block.data);
               final Hash hashId = args[0];
-          //    (debug)
-           //       ? print(
-          //        "htlc id ${hashId.toString()} reclaimed")
-          //        : null;
+              //    (debug)
+              //       ? print(
+              //        "htlc id ${hashId.toString()} reclaimed")
+              //        : null;
 
               await removeSwap(hashId);
-            }
-            else {
+            } else {
               print("ERROR COULD NOT DECODE BLOCK ${_block.hash}");
             }
-
           } catch (e) {
-            _sendErrorNotification("1 Failed to parse block ${_block.hash}: $e");
+            _sendErrorNotification(
+                "1 Failed to parse block ${_block.hash}: $e");
           }
         }
       }
@@ -166,9 +165,8 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
     //sl.get<HtlcListBloc>().addDiscoveredSwaps(cachedSwaps);
 
     //await _saveLastCheckedHeightValueToCache(
-     //   (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!.height);
+    //   (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!.height);
   }
-
 
 /*
   // Only hashes that are parsed from live momentums are added to the pool
@@ -194,9 +192,10 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
     print("[!] loading saved swaps");
 
     List createdSwapsList = _activeSwapsBox?.get(
-      kHtlcCreatedSwapsKey,
-      defaultValue: [], //[{}],
-    ) ?? [];
+          kHtlcCreatedSwapsKey,
+          defaultValue: [], //[{}],
+        ) ??
+        [];
 
     if (createdSwapsList.isEmpty) {
       print("No saved swaps found");
@@ -212,8 +211,10 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
         }
       });
     }
-    print("Initially: There are $count pending swaps (try to get this as close to 0 as possible)");
-    print("Initially: There are ${createdSwapsList.length} total swaps in the list");
+    print(
+        "Initially: There are $count pending swaps (try to get this as close to 0 as possible)");
+    print(
+        "Initially: There are ${createdSwapsList.length} total swaps in the list");
 
     for (var i = 0; i < createdSwapsList.length; i++) {
       createdSwapsList[i].forEach((htlc, preimage) {
@@ -223,20 +224,21 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
       });
     }
     print("[!] loaded ${cachedSwaps.length} saved swaps");
-
   }
 
   Future<void> removeSwap(Hash hashId) async {
-    print("[!] checking if unlocked, reclaimed, or expired swap needs to be removed");
+    print(
+        "[!] checking if unlocked, reclaimed, or expired swap needs to be removed");
     // if user unlocks a swap -- remove it from the list
     // if user reclaims a swap -- remove it from the list
     // if hashlocked swap expires -- remove it from the list
     print("hashId: ${hashId.toString()}");
 
     List createdSwapsList = _activeSwapsBox?.get(
-      kHtlcCreatedSwapsKey,
-      defaultValue: [], //[{}],
-    ) ?? [];
+          kHtlcCreatedSwapsKey,
+          defaultValue: [], //[{}],
+        ) ??
+        [];
 
     if (createdSwapsList.isEmpty && cachedSwaps.isEmpty) {
       print("No saved or cached swaps found");
@@ -249,7 +251,8 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
         _createdSwapsList[i].forEach((htlc, preimage) {
           HtlcInfo _savedSwap = HtlcInfo.fromJson(jsonDecode(htlc));
           if (_savedSwap.id == hashId) {
-            print("removed ${_savedSwap.id.toString()} from createdSwapsList because it was unlocked, reclaimed, or expired");
+            print(
+                "removed ${_savedSwap.id.toString()} from createdSwapsList because it was unlocked, reclaimed, or expired");
             createdSwapsList.removeAt(i);
           }
         });
@@ -261,15 +264,14 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
       List _cachedSwaps = cachedSwaps.toList();
       for (var i = 0; i < _cachedSwaps.length; i++) {
         if (_cachedSwaps[i].id == hashId) {
-          print("removed ${_cachedSwaps[i].id.toString()} from cachedSwaps because it was unlocked, reclaimed, or expired");
+          print(
+              "removed ${_cachedSwaps[i].id.toString()} from cachedSwaps because it was unlocked, reclaimed, or expired");
           cachedSwaps.removeAt(i);
           controller.add(cachedSwaps);
         }
       }
     }
   }
-
-
 
   Future<void> addPendingSwap({
     required String json,
@@ -289,46 +291,49 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
  */
 
     List createdSwapsList = _activeSwapsBox?.get(
-      kHtlcCreatedSwapsKey,
-      defaultValue: [], //[{}],
-    ) ?? [];
+          kHtlcCreatedSwapsKey,
+          defaultValue: [], //[{}],
+        ) ??
+        [];
 
     //createdSwapsList.add([{_pendingCreatedSwap.toJson().toString(): _preimage.toString(),}]);
-    createdSwapsList.add({json: _preimage.toString(),});
+    createdSwapsList.add({
+      json: _preimage.toString(),
+    });
 
     await _activeSwapsBox?.put(
       kHtlcCreatedSwapsKey,
       createdSwapsList,
     );
 
-    print('saved created swap: ${_pendingCreatedSwap.toJson()} || preimage: $_preimage');
+    print(
+        'saved created swap: ${_pendingCreatedSwap.toJson()} || preimage: $_preimage');
     //print(_activeSwapsBox?.get(kHtlcCreatedSwapsKey)[0]['id']);
     print(_activeSwapsBox?.get(kHtlcCreatedSwapsKey).length);
 
     for (var x in _activeSwapsBox?.get(kHtlcCreatedSwapsKey) ?? []) {
       print(x);
     }
-
   }
-
 
   Future<bool> updatePendingSwaps(HtlcInfo _discoveredSwap) async {
     print("updating pending swaps");
     bool _valueChanged = false;
     List createdSwapsList = _activeSwapsBox?.get(
-      kHtlcCreatedSwapsKey,
-      defaultValue: [], //[{}],
-    ) ?? [];
-   // print("createdSwapsList: ${createdSwapsList.length}");
-  //  print(createdSwapsList);
+          kHtlcCreatedSwapsKey,
+          defaultValue: [], //[{}],
+        ) ??
+        [];
+    // print("createdSwapsList: ${createdSwapsList.length}");
+    //  print(createdSwapsList);
 
     int count = 0;
     for (var i = 0; i < createdSwapsList.length; i++) {
       createdSwapsList[i].forEach((htlc, preimage) {
         //htlc = jsonDecode(htlc);
-      //  print("htlc: $htlc || ${htlc.runtimeType}");
+        //  print("htlc: $htlc || ${htlc.runtimeType}");
         HtlcInfo _pendingSwap = HtlcInfo.fromJson(jsonDecode(htlc));
-       // print("did it work? ${_pendingSwap.id}");
+        // print("did it work? ${_pendingSwap.id}");
         if (_pendingSwap.id.toString() == "0" * 64) {
           count++;
         }
@@ -346,22 +351,25 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
       //HtlcInfo _tmp = HtlcInfo.fromJson(jsonDecode(createdSwapsList[i].keys));
       createdSwapsList[i].forEach((htlc, preimage) {
         htlc = jsonDecode(htlc);
-        //print("json htlc: $htlc || ${htlc.runtimeType}");
+        // print("json htlc: $htlc || ${htlc.runtimeType}");
         HtlcInfo _pendingSwap = HtlcInfo.fromJson(htlc);
-        //print("preimage: $preimage");
+        // print("preimage: $preimage");
 
-        //print("_pendingSwap: ${_pendingSwap.id}");
+        // print("_pendingSwap: ${_pendingSwap.id}");
 
         if (_pendingSwap.id.toString() == "0" * 64) {
-          print("found pending swap: ${_pendingSwap.id}");
+          //print("found pending swap: ${_pendingSwap.id}");
           print("---------------------------------------------");
+          print("json htlc: $htlc || ${htlc.runtimeType}");
           print("pending swap: ${_pendingSwap.toJson()}");
           print("discovered swap: ${_discoveredSwap.toJson()}");
           print("---------------------------------------------");
           if (_pendingSwap.amount == _discoveredSwap.amount &&
               _pendingSwap.expirationTime == _discoveredSwap.expirationTime &&
+              //_discoveredSwap.expirationTime - _pendingSwap.expirationTime <= 60 &&
               _pendingSwap.hashLocked == _discoveredSwap.hashLocked &&
-              Hash.fromBytes((_pendingSwap.hashLock)!) == Hash.fromBytes((_discoveredSwap.hashLock)!) &&
+              Hash.fromBytes((_pendingSwap.hashLock)!) ==
+                  Hash.fromBytes((_discoveredSwap.hashLock)!) &&
               _pendingSwap.hashType == _discoveredSwap.hashType &&
               _pendingSwap.keyMaxSize == _discoveredSwap.keyMaxSize &&
               _pendingSwap.tokenStandard == _discoveredSwap.tokenStandard &&
@@ -371,14 +379,19 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
             for (HtlcInfo _cachedSwap in cachedSwaps) {
               if (_cachedSwap.id == _pendingSwap.id) {
                 if (_cachedSwap.amount == _discoveredSwap.amount &&
-                    _cachedSwap.expirationTime == _discoveredSwap.expirationTime &&
+                    _cachedSwap.expirationTime ==
+                        _discoveredSwap.expirationTime &&
+                    //_discoveredSwap.expirationTime - _cachedSwap.expirationTime <= 60 &&
                     _cachedSwap.hashLocked == _discoveredSwap.hashLocked &&
-                    Hash.fromBytes((_cachedSwap.hashLock)!) == Hash.fromBytes((_discoveredSwap.hashLock)!) &&
+                    Hash.fromBytes((_cachedSwap.hashLock)!) ==
+                        Hash.fromBytes((_discoveredSwap.hashLock)!) &&
                     _cachedSwap.hashType == _discoveredSwap.hashType &&
                     _cachedSwap.keyMaxSize == _discoveredSwap.keyMaxSize &&
-                    _cachedSwap.tokenStandard == _discoveredSwap.tokenStandard &&
+                    _cachedSwap.tokenStandard ==
+                        _discoveredSwap.tokenStandard &&
                     _cachedSwap.timeLocked == _discoveredSwap.timeLocked) {
-                  print("found match in cached swaps!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                  print(
+                      "found match in cached swaps!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                   print("updating its id to ${_discoveredSwap.id}");
                   _cachedSwap.id = _discoveredSwap.id;
                 }
@@ -409,7 +422,6 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
       //print("${createdSwapsList[i].keys}");
       //print("${createdSwapsList[i].values}");
 
-
     }
     if (_valueChanged) {
       await _activeSwapsBox?.put(
@@ -431,9 +443,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
       }
     }
 
-   // print(await zenon!.ledger.get)
-
-
+    // print(await zenon!.ledger.get)
 
     if (!_alreadyCached) {
       cachedSwaps.add(_createdSwap);
@@ -453,19 +463,22 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
       String _preimage = "";
 
       List createdSwapsList = _activeSwapsBox?.get(
-        kHtlcCreatedSwapsKey,
-        defaultValue: [], //[{}],
-      ) ?? [];
+            kHtlcCreatedSwapsKey,
+            defaultValue: [], //[{}],
+          ) ??
+          [];
 
-      createdSwapsList.add({json: _preimage.toString(),});
+      createdSwapsList.add({
+        json: _preimage.toString(),
+      });
 
       await _activeSwapsBox?.put(
         kHtlcCreatedSwapsKey,
         createdSwapsList,
       );
 
-      print('added created swap: ${_createdSwap.toJson()} || preimage: $_preimage');
-
+      print(
+          'added created swap: ${_createdSwap.toJson()} || preimage: $_preimage');
     }
   }
 
@@ -756,13 +769,12 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
   // check all account blocks for the htlc contract from _startingHeight until now
   // then set _lastCheckedContractHeight to the last contract height checked
   Future _initCheckHtlcContractBlocks(int _startingHeight) async {
-
-    AccountBlock _frontierContractBlock = (await zenon!.ledger.getFrontierAccountBlock(
-        htlcAddress))!;
+    AccountBlock _frontierContractBlock =
+        (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!;
     int _delta = _frontierContractBlock.height - _startingHeight + 1;
     AccountBlockList _contractBlocks = await zenon!.ledger
         .getAccountBlocksByHeight(htlcAddress, _startingHeight, _delta);
-    
+
     for (var block in _contractBlocks.list!) {
       if (block.blockType == BlockTypeEnum.contractReceive.index) {
         AccountBlock _block = block.pairedAccountBlock!;
@@ -774,15 +786,15 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
               if (eq(AbiFunction.extractSignature(entry.encodeSignature()),
                   AbiFunction.extractSignature(_block.data))) {
                 f = AbiFunction(entry.name!, entry.inputs!);
-               // (debug) ? print("found function ${f.name} and ${f.inputs} in ${_block
+                // (debug) ? print("found function ${f.name} and ${f.inputs} in ${_block
                 //    .hash} with data ${f.decode(_block.data)}") :null;
               }
             }
             if (f.name.toString() == "UnlockHtlc") {
               var args = f.decode(_block.data);
               final preimage = hex.encode(args[1]);
-            //  (debug) ? print(
-           //       "htlc id ${_block.hash} unlocked with pre-image: $preimage") : null;
+              //  (debug) ? print(
+              //       "htlc id ${_block.hash} unlocked with pre-image: $preimage") : null;
 
               /*
               List<HtlcInfo> hashLockedHtlcs = [];
@@ -821,7 +833,8 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
                */
             }
           } catch (e) {
-            _sendErrorNotification("2 Failed to parse block ${_block.hash}: $e");
+            _sendErrorNotification(
+                "2 Failed to parse block ${_block.hash}: $e");
           }
         }
       }
@@ -830,17 +843,17 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
         (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!.height);
   }
 
-
-
   // check all account blocks for the htlc contract from _startingHeight until now
   // then set _lastCheckedContractHeight to the last contract height checked
   Future<Map> evaluateSwapStatus(Hash hashId) async {
     //Map: {f.name.toString(): preimage ?? ""}
 
-    int _startingHeight = ((await zenon!.ledger.getAccountBlockByHash(hashId))?.pairedAccountBlock?.height)!;
+    int _startingHeight = ((await zenon!.ledger.getAccountBlockByHash(hashId))
+        ?.pairedAccountBlock
+        ?.height)!;
 
-    AccountBlock _frontierContractBlock = (await zenon!.ledger.getFrontierAccountBlock(
-        htlcAddress))!;
+    AccountBlock _frontierContractBlock =
+        (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!;
     int _delta = _frontierContractBlock.height - _startingHeight + 1;
     AccountBlockList _contractBlocks = await zenon!.ledger
         .getAccountBlocksByHeight(htlcAddress, _startingHeight, _delta);
@@ -867,8 +880,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
               if (htlcId == hashId) {
                 return {f.name.toString(): preimage};
               }
-            }
-            else if (f.name.toString() == "ReclaimHtlc") {
+            } else if (f.name.toString() == "ReclaimHtlc") {
               var args = f.decode(_block.data);
               final Hash hashId = args[0];
               if (hashId == hashId) {
@@ -876,7 +888,8 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
               }
             }
           } catch (e) {
-            _sendErrorNotification("2 Failed to parse block ${_block.hash}: $e");
+            _sendErrorNotification(
+                "2 Failed to parse block ${_block.hash}: $e");
           }
         }
       }
@@ -887,11 +900,12 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
   // check all account blocks for the htlc contract from _startingHeight until now
   // then set _lastCheckedContractHeight to the last contract height checked
   Future<String> scanForSecret(Hash hashId) async {
+    int _startingHeight = ((await zenon!.ledger.getAccountBlockByHash(hashId))
+        ?.pairedAccountBlock
+        ?.height)!;
 
-    int _startingHeight = ((await zenon!.ledger.getAccountBlockByHash(hashId))?.pairedAccountBlock?.height)!;
-
-    AccountBlock _frontierContractBlock = (await zenon!.ledger.getFrontierAccountBlock(
-        htlcAddress))!;
+    AccountBlock _frontierContractBlock =
+        (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!;
     int _delta = _frontierContractBlock.height - _startingHeight + 1;
     AccountBlockList _contractBlocks = await zenon!.ledger
         .getAccountBlocksByHeight(htlcAddress, _startingHeight, _delta);
@@ -920,7 +934,8 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
               }
             }
           } catch (e) {
-            _sendErrorNotification("2 Failed to parse block ${_block.hash}: $e");
+            _sendErrorNotification(
+                "2 Failed to parse block ${_block.hash}: $e");
           }
         }
       }
@@ -931,38 +946,42 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
   // Input: current momentum height
   // Output: htlc contract height kHtlcMaxCheckHours hours ago, within 10 blocks
   Future<int> _getContractHeightXHoursAgo() async {
-
-    int _currentMomentumHeight = (await zenon!.ledger.getFrontierMomentum()).height;
-    AccountBlock _frontierContractBlock = (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!;
+    int _currentMomentumHeight =
+        (await zenon!.ledger.getFrontierMomentum()).height;
+    AccountBlock _frontierContractBlock =
+        (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!;
     int _contractHeightXHoursAgo = 0;
 
-    (debug) ? {
- //   print("_initCheckHtlcContractBlocksReverse: $_currentMomentumHeight"),
-  //  print("_frontierContractBlock height for htlcaddress: ${_frontierContractBlock?.height}"),
-   // print("_frontierContractBlock momentumAcknowledged for htlcaddress: ${_frontierContractBlock?.momentumAcknowledged.height}"),
-  //  print("_frontierContractBlock?.height = ${_frontierContractBlock?.height}"),
-    } : null;
+    (debug)
+        ? {
+            //   print("_initCheckHtlcContractBlocksReverse: $_currentMomentumHeight"),
+            //  print("_frontierContractBlock height for htlcaddress: ${_frontierContractBlock?.height}"),
+            // print("_frontierContractBlock momentumAcknowledged for htlcaddress: ${_frontierContractBlock?.momentumAcknowledged.height}"),
+            //  print("_frontierContractBlock?.height = ${_frontierContractBlock?.height}"),
+          }
+        : null;
 
     if (_frontierContractBlock!.height >= 10) {
       for (var i = _frontierContractBlock.height; i >= 0; i -= 10) {
+        // (debug) ? print("i=$i") : null;
 
-       // (debug) ? print("i=$i") : null;
+        var _contractBlock =
+            await zenon!.ledger.getAccountBlocksByHeight(htlcAddress, i, 1);
 
-        var _contractBlock = await zenon!.ledger.getAccountBlocksByHeight(
-            htlcAddress, i, 1);
-
-      //  (debug) ? {
-       //   print("_contractBlock height: ${_contractBlock.list?.first.height}"),
-      //    print("_contractBlock momentumAcknowledged: ${_contractBlock.list?.first.momentumAcknowledged.height}"),
-     //   } : null;
+        //  (debug) ? {
+        //   print("_contractBlock height: ${_contractBlock.list?.first.height}"),
+        //    print("_contractBlock momentumAcknowledged: ${_contractBlock.list?.first.momentumAcknowledged.height}"),
+        //   } : null;
 
         if ((_contractBlock.list?.first.momentumAcknowledged.height)! <
             _currentMomentumHeight - (kMomentumsPerHour * kHtlcMaxCheckHours)) {
-          (debug) ? {
-       //   print("found contract block that was submitted $kHtlcMaxCheckHours hours ago, within 10 blocks of accuracy"),
-     //     print("_contractBlock height: ${_contractBlock.list?.first.height}"),
-     //     print("_contractBlock momentumAcknowledged: ${_contractBlock.list?.first.momentumAcknowledged.height}"),
-        } : null;
+          (debug)
+              ? {
+                  //   print("found contract block that was submitted $kHtlcMaxCheckHours hours ago, within 10 blocks of accuracy"),
+                  //     print("_contractBlock height: ${_contractBlock.list?.first.height}"),
+                  //     print("_contractBlock momentumAcknowledged: ${_contractBlock.list?.first.momentumAcknowledged.height}"),
+                }
+              : null;
           _contractHeightXHoursAgo = i;
           break;
         }
@@ -975,9 +994,9 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
 
   Future<void> _saveLastCheckedHeightValueToCache(int _height) async {
     //await sharedPrefsService!.put(
-   //   kHtlcLastCheckedHeightKey,
-   //   _height,
-  //  );
+    //   kHtlcLastCheckedHeightKey,
+    //   _height,
+    //  );
   }
 
   void _refreshQueryCooldown() {
@@ -998,9 +1017,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
     addEvent(
       WalletNotification(
         title: 'Automatic swap unlock was successful',
-        timestamp: DateTime
-            .now()
-            .millisecondsSinceEpoch,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
         details: 'Automatic swap unlock was successful.',
         type: NotificationType.paymentReceived,
       ),
@@ -1011,9 +1028,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
     addEvent(
       WalletNotification(
         title: 'Failed to automatically unlock swap',
-        timestamp: DateTime
-            .now()
-            .millisecondsSinceEpoch,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
         details: 'Failed to automatically unlock swap: $errorText',
         type: NotificationType.error,
       ),

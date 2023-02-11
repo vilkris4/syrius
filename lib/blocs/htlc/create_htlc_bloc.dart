@@ -7,7 +7,7 @@ import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
 class CreateHtlcBloc extends BaseBloc<AccountBlockTemplate?> {
   void createHtlc({
-    required String? fromAddress,
+    required Address timeLocked,
     required Token token,
     required String amount,
     required Address hashLocked,
@@ -28,14 +28,11 @@ class CreateHtlcBloc extends BaseBloc<AccountBlockTemplate?> {
         hashLock,
       );
       KeyPair blockSigningKeyPair = kKeyStore!.getKeyPair(
-        kDefaultAddressList.indexOf(fromAddress),
+        kDefaultAddressList.indexOf(timeLocked.toString()),
       );
-      AccountBlockUtils.createAccountBlock(
-          transactionParams,
-          'create swap',
-          blockSigningKey: blockSigningKeyPair,
-          waitForRequiredPlasma: true
-      ).then(
+      AccountBlockUtils.createAccountBlock(transactionParams, 'create swap',
+              blockSigningKey: blockSigningKeyPair, waitForRequiredPlasma: true)
+          .then(
         (response) {
           AddressUtils.refreshBalance();
           addEvent(response);

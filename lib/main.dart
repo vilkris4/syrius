@@ -67,10 +67,6 @@ main() async {
   // Register Hive adapters
   Hive.registerAdapter(NotificationTypeAdapter());
   Hive.registerAdapter(WalletNotificationAdapter());
-  //Hive.registerAdapter(HtlcInfoAdapter());
-  //Hive.registerAdapter(HashAdapter());
-  //Hive.registerAdapter(AddressAdapter());
-  //Hive.registerAdapter(TokenStandardAdapter());
 
   if (sharedPrefsService == null) {
     sharedPrefsService = await sl.getAsync<SharedPrefsService>();
@@ -149,7 +145,6 @@ void setup() {
   sl.registerSingleton<NotificationsBloc>(NotificationsBloc());
   sl.registerSingleton<AcceleratorBalanceBloc>(AcceleratorBalanceBloc());
   sl.registerSingleton<PowGeneratingStatusBloc>(PowGeneratingStatusBloc());
-  //sl.registerSingleton<HtlcListBloc>(HtlcListBloc());
 }
 
 class MyApp extends StatefulWidget {

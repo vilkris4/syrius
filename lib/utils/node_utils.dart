@@ -105,7 +105,6 @@ class NodeUtils {
           .then((value) => NotificationUtils.sendNodeSyncingNotification());
       _initListenForUnreceivedAccountBlocks(allResponseBroadcaster);
       _initListenForHtlcAccountBlocks(allResponseBroadcaster);
-      //sl<ActiveSwapsWorker>().initCheckHtlcContractBlocks();
     });
   }
 

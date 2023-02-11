@@ -20,31 +20,21 @@ class InfoItemWidget extends StatefulWidget {
 class _InfoItemWidgetState extends State<InfoItemWidget> {
   @override
   Widget build(BuildContext context) {
-    double _width = MediaQuery
-        .of(context)
-        .size
-        .width * 0.139;
+    double _width = MediaQuery.of(context).size.width * 0.139;
     if (_width >= 240) {
       _width = 240;
     }
     bool _shrink = (_width < 230) ? true : false;
     return Container(
-      padding: const EdgeInsets.symmetric(
-          vertical: 5.0,
-          horizontal: 10.0
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
       width: _width,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(
           8.0,
         ),
-        color: Theme
-            .of(context)
-            .dividerTheme
-            .color,
+        color: Theme.of(context).dividerTheme.color,
       ),
-      child:
-      Padding(
+      child: Padding(
         padding: const EdgeInsets.only(
           left: 5.0,
           top: 5.0,
@@ -59,10 +49,7 @@ class _InfoItemWidgetState extends State<InfoItemWidget> {
                 children: [
                   Text(
                     widget.id,
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .subtitle1,
+                    style: Theme.of(context).textTheme.subtitle1,
                     textAlign: TextAlign.center,
                   ),
                   const Spacer(),
@@ -73,51 +60,41 @@ class _InfoItemWidgetState extends State<InfoItemWidget> {
               children: <Widget>[
                 Visibility(
                   visible: !_shrink,
-                  child:
-                  Text(
+                  child: Text(
                     widget.id,
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .subtitle1,
+                    style: Theme.of(context).textTheme.subtitle1,
                     textAlign: TextAlign.left,
                   ),
                 ),
                 Visibility(
                   visible: !_shrink,
-                  child:
-                  const Spacer(),
+                  child: const Spacer(),
                 ),
                 Row(
-                  children: (widget.value == "0" * 64) ? [
-                    Text(
-                      "Pending...",
-                      style: Theme
-                          .of(context)
-                          .textTheme
-                          .bodyText2,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(
-                      width: 15.0,
-                      height: 30.0,
-                    ),
-                  ] : [
-                    Text(
-                      FormatUtils.formatLongString(widget.value),
-                      style: Theme
-                          .of(context)
-                          .textTheme
-                          .bodyText2,
-                      textAlign: TextAlign.center,
-                    ),
-                    //const Spacer(),
-                  ],
+                  children: (widget.value == "0" * 64)
+                      ? [
+                          Text(
+                            "Pending...",
+                            style: Theme.of(context).textTheme.bodyText2,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(
+                            width: 15.0,
+                            height: 30.0,
+                          ),
+                        ]
+                      : [
+                          Text(
+                            FormatUtils.formatLongString(widget.value),
+                            style: Theme.of(context).textTheme.bodyText2,
+                            textAlign: TextAlign.center,
+                          ),
+                          //const Spacer(),
+                        ],
                 ),
                 Visibility(
                     visible: (widget.value != "0" * 64 && _shrink),
-                    child: const Spacer()
-                ),
+                    child: const Spacer()),
                 Visibility(
                   visible: (widget.value != "0" * 64),
                   child: CopyToClipboardIcon(
