@@ -78,7 +78,6 @@ showUnlockDialog({
                   InfoItemWidget(
                     id: "Deposit ID",
                     value: htlc.id.toString(),
-                    shrinkable: false,
                   ),
                   const SizedBox(
                     width: 15.0,
@@ -86,7 +85,6 @@ showUnlockDialog({
                   InfoItemWidget(
                     id: "Sender",
                     value: htlc.timeLocked.toString(),
-                    shrinkable: false,
                   ),
                 ], // Deposit ID and Sender (info widgets)
               ),

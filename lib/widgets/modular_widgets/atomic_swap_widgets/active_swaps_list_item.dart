@@ -42,7 +42,8 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
   int _currentTime = ((DateTime.now().millisecondsSinceEpoch) / 1000).floor();
 
   final TextEditingController _secretController = TextEditingController();
-  final TextEditingController _depositAmountController = TextEditingController();
+  final TextEditingController _depositAmountController =
+      TextEditingController();
   final GlobalKey<FormState> _secretKey = GlobalKey();
   final GlobalKey<FormState> _depositAmountKey = GlobalKey();
 
@@ -168,39 +169,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
           const SizedBox(
             height: 20.0,
           ),
-          Row(children: [
-            InfoItemWidget(
-              id: "Deposit ID",
-              value: (_htlc!.id.toString()),
-              preimageExists: preimage?.isNotEmpty,
-            ),
-            const SizedBox(
-              width: 10.0,
-            ),
-            InfoItemWidget(
-              id: "Hashlock",
-              value: FormatUtils.encodeHexString((_htlc!.hashLock)!).toString(),
-              preimageExists: preimage?.isNotEmpty,
-            ),
-            const SizedBox(
-              width: 10.0,
-            ),
-            (_recipientIsSelf == true)
-                ? InfoItemWidget(
-                    id: "Sender",
-                    value: _htlc!.timeLocked.toString(),
-              preimageExists: preimage?.isNotEmpty,
-                  )
-                : InfoItemWidget(
-                    id: "Recipient",
-                    value: _htlc!.hashLocked.toString(),
-              preimageExists: preimage?.isNotEmpty,
-                  ),
-            const SizedBox(
-              width: 10.0,
-            ),
-            _getKeyWidget(),
-          ]),
+          _getInfoItems(),
         ],
       ),
     );
@@ -351,7 +320,46 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
     );
   }
 
-  Widget _getKeyWidget() {
+  Widget _getInfoItems() {
+    final multiplier = (preimage?.isEmpty ?? true) ? 0.18 : 0.139;
+    double itemWidth = MediaQuery.of(context).size.width * multiplier;
+    itemWidth = itemWidth > 240.0 ? 240.0 : itemWidth;
+    return Row(children: [
+      InfoItemWidget(
+        id: "Deposit ID",
+        value: (_htlc!.id.toString()),
+        width: itemWidth,
+      ),
+      const SizedBox(
+        width: 10.0,
+      ),
+      InfoItemWidget(
+        id: "Hashlock",
+        value: FormatUtils.encodeHexString((_htlc!.hashLock)!).toString(),
+        width: itemWidth,
+      ),
+      const SizedBox(
+        width: 10.0,
+      ),
+      (_recipientIsSelf == true)
+          ? InfoItemWidget(
+              id: "Sender",
+              value: _htlc!.timeLocked.toString(),
+              width: itemWidth,
+            )
+          : InfoItemWidget(
+              id: "Recipient",
+              value: _htlc!.hashLocked.toString(),
+              width: itemWidth,
+            ),
+      const SizedBox(
+        width: 10.0,
+      ),
+      _getKeyWidget(itemWidth),
+    ]);
+  }
+
+  Widget _getKeyWidget(double width) {
     if (preimage == null) {
       _getPreimage();
     }
@@ -360,7 +368,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
       child: InfoItemWidget(
         id: "Secret",
         value: preimage!,
-        preimageExists: preimage?.isNotEmpty,
+        width: width,
       ),
     );
   }
@@ -570,9 +578,9 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
             '"hashLock": "${base64.encode((_htlc?.hashLock)!)}"}';
 
         await sl.get<ActiveSwapsWorker>().addPendingSwap(
-          json: json,
-          //preimage: preimage,
-        );
+              json: json,
+              //preimage: preimage,
+            );
         setState(() {});
 
         //_sendUnlockHtlcBlock();

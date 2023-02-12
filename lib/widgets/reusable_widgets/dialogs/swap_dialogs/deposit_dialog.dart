@@ -101,7 +101,9 @@ showDepositDialog({
                   Row(
                     children: [
                       InfoItemWidget(
-                          id: "Deposit ID", value: htlc.id.toString(), shrinkable: false,),
+                        id: "Deposit ID",
+                        value: htlc.id.toString(),
+                      ),
                       const SizedBox(
                         width: 15.0,
                       ),
@@ -110,7 +112,6 @@ showDepositDialog({
                         value: (_creatingSwap)
                             ? htlc.hashLocked.toString()
                             : htlc.timeLocked.toString(),
-                        shrinkable: false,
                       )
                     ],
                   ),
@@ -314,8 +315,7 @@ showDepositDialog({
                           if (_creatingSwap) {
                             print("creating swap");
                             onCreateButtonPressed?.call();
-                          }
-                          else if (valid == true) {
+                          } else if (valid == true) {
                             print("valid");
                             onDepositButtonPressed!(_selectedToken);
                           } else {
