@@ -75,12 +75,19 @@ showUnlockDialog({
               kVerticalSpacing,
               Row(
                 children: [
-                  InfoItemWidget(id: "Deposit ID", value: htlc.id.toString()),
+                  InfoItemWidget(
+                    id: "Deposit ID",
+                    value: htlc.id.toString(),
+                    shrinkable: false,
+                  ),
                   const SizedBox(
                     width: 15.0,
                   ),
                   InfoItemWidget(
-                      id: "Sender", value: htlc.timeLocked.toString()),
+                    id: "Sender",
+                    value: htlc.timeLocked.toString(),
+                    shrinkable: false,
+                  ),
                 ], // Deposit ID and Sender (info widgets)
               ),
               kVerticalSpacing,

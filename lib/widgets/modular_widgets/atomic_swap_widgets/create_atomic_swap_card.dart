@@ -359,7 +359,8 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
       controller: _secretController,
       key: _secretKey,
       preimage: preimage,
-      onDepositButtonPressed: () async {
+      onCreateButtonPressed: () async {
+        print("create button pressed");
         sl.get<ActiveSwapsWorker>().addPendingSwap(
               json: json,
               preimage: preimage,

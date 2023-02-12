@@ -6,10 +6,14 @@ import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/icons/copy_
 class InfoItemWidget extends StatefulWidget {
   final String id;
   final String value;
+  final bool? shrinkable;
+  final bool? preimageExists;
 
   const InfoItemWidget({
     required this.id,
     required this.value,
+    this.shrinkable,
+    this.preimageExists,
     Key? key,
   }) : super(key: key);
 
@@ -20,11 +24,16 @@ class InfoItemWidget extends StatefulWidget {
 class _InfoItemWidgetState extends State<InfoItemWidget> {
   @override
   Widget build(BuildContext context) {
-    double _width = MediaQuery.of(context).size.width * 0.139;
-    if (_width >= 240) {
-      _width = 240;
+    double _width = 240;
+    bool _shrink = false;
+    if (widget.shrinkable != false) {
+      double _multiplier = (widget.preimageExists == true) ? 0.139 : 0.18;
+      _width = MediaQuery.of(context).size.width * _multiplier;
+      if (_width >= 240) {
+        _width = 240;
+      }
+      _shrink = (_width < 230) ? true : false;
     }
-    bool _shrink = (_width < 230) ? true : false;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
       width: _width,

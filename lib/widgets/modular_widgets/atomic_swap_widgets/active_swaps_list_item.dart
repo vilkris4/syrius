@@ -42,7 +42,9 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
   int _currentTime = ((DateTime.now().millisecondsSinceEpoch) / 1000).floor();
 
   final TextEditingController _secretController = TextEditingController();
+  final TextEditingController _depositAmountController = TextEditingController();
   final GlobalKey<FormState> _secretKey = GlobalKey();
+  final GlobalKey<FormState> _depositAmountKey = GlobalKey();
 
   bool _depositing = false;
   bool _reclaiming = false;
@@ -170,6 +172,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
             InfoItemWidget(
               id: "Deposit ID",
               value: (_htlc!.id.toString()),
+              preimageExists: preimage?.isNotEmpty,
             ),
             const SizedBox(
               width: 10.0,
@@ -177,6 +180,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
             InfoItemWidget(
               id: "Hashlock",
               value: FormatUtils.encodeHexString((_htlc!.hashLock)!).toString(),
+              preimageExists: preimage?.isNotEmpty,
             ),
             const SizedBox(
               width: 10.0,
@@ -185,10 +189,12 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
                 ? InfoItemWidget(
                     id: "Sender",
                     value: _htlc!.timeLocked.toString(),
+              preimageExists: preimage?.isNotEmpty,
                   )
                 : InfoItemWidget(
                     id: "Recipient",
                     value: _htlc!.hashLocked.toString(),
+              preimageExists: preimage?.isNotEmpty,
                   ),
             const SizedBox(
               width: 10.0,
@@ -277,7 +283,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
       );
     }
 
-    if (_htlc!.id.toString() == "0" * 64 || _depositing) {
+    if (_htlc!.id.toString() == "0" * 64) {// || _depositing) {
       return SizedBox(
         height: 20,
         child: Row(
@@ -354,6 +360,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
       child: InfoItemWidget(
         id: "Secret",
         value: preimage!,
+        preimageExists: preimage?.isNotEmpty,
       ),
     );
   }
@@ -547,13 +554,27 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
       title: 'Make Deposit',
       htlc: _htlc!,
       token: token!,
-      controller: _secretController,
-      key: _secretKey,
-      onDepositButtonPressed: () {
-        _depositFunds(model);
-        setState(() {
-          _depositing = true;
-        });
+      controller: _depositAmountController,
+      key: _depositAmountKey,
+      onDepositButtonPressed: (_selectedToken) async {
+        _depositFunds(model, _selectedToken);
+
+        final json = '{"id": "${"0" * 64}",'
+            '"timeLocked": "${_htlc?.hashLocked}",'
+            '"hashLocked": "${_htlc?.timeLocked}",'
+            '"tokenStandard": "${_selectedToken.tokenStandard}",'
+            '"amount": ${_depositAmountController.text.toNum().extractDecimals(_selectedToken.decimals)},'
+            '"expirationTime": ${_htlc?.expirationTime},'
+            '"hashType": ${_htlc?.hashType},'
+            '"keyMaxSize": ${_htlc?.keyMaxSize},'
+            '"hashLock": "${base64.encode((_htlc?.hashLock)!)}"}';
+
+        await sl.get<ActiveSwapsWorker>().addPendingSwap(
+          json: json,
+          //preimage: preimage,
+        );
+        setState(() {});
+
         //_sendUnlockHtlcBlock();
         //_sendSwapBlock();
         Navigator.pop(context);
@@ -561,14 +582,14 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
     );
   }
 
-  void _depositFunds(CreateHtlcBloc model) {
+  void _depositFunds(CreateHtlcBloc model, Token _selectedToken) {
     //Navigator.pop(context);
     //_sendPaymentButtonKey.currentState?.animateForward();
+    print("_depositFunds");
     model.createHtlc(
       timeLocked: _htlc!.hashLocked,
-      token: token!,
-      amount: "10",
-      //_amountController.text, //TODO: change to amount
+      token: _selectedToken,
+      amount: _depositAmountController.text,
       hashLocked: _htlc!.timeLocked,
       expirationTime: _htlc!.expirationTime,
       hashType: _htlc!.hashType,

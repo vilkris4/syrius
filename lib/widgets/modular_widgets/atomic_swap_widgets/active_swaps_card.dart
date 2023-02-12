@@ -196,7 +196,8 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
                       future:
                           sl.get<ActiveSwapsWorker>().parseHtlcContractBlocks(),
                       builder: (context, snapshot) {
-                        if (snapshot.hasData && !snapshot.hasError) {
+
+                        if (snapshot.hasData && !snapshot.hasError && sl.get<ActiveSwapsWorker>().synced == true) {
                           _activewapList = snapshot.data!;
                           _filteredSwapList = _activewapList!;
                           print("FUTURE: LOADING STREAM CONTROLLER");
@@ -206,7 +207,12 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
                         } else if (snapshot.hasError) {
                           return const SyriusLoadingWidget();
                         }
-                        return const SyriusLoadingWidget();
+                        return Column (
+                          children: [
+                            const SyriusLoadingWidget(),
+                            Text("Syncing swap history. Please wait..."),
+                          ],
+                        );
                       },
                     )
                   : StreamBuilder<List<HtlcInfo>>(
@@ -229,7 +235,7 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
                   }
 
                    */
-                        if ((snapshot.data?.length)! > 0) {
+                        if ((snapshot.data?.length)! > 0 && sl.get<ActiveSwapsWorker>().synced == true) {
                           return ListView.separated(
                               controller: _scrollController,
                               cacheExtent: 10000,
@@ -251,6 +257,14 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
                                 );
                               });
                         } else {
+                          if (!sl.get<ActiveSwapsWorker>().synced) {
+                            return Column (
+                                children: [
+                                  const SyriusLoadingWidget(),
+                                  Text("Syncing swap history. Please wait..."),
+                                  ],
+                            );
+                          }
                           if (_searchKeyWordController.text.isNotEmpty) {
                             return const SyriusErrorWidget('No results found');
                           } else {

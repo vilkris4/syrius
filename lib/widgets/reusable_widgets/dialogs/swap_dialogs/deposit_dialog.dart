@@ -30,7 +30,9 @@ showDepositDialog({
   required String title,
   required HtlcInfo htlc,
   required Token token,
-  required VoidCallback onDepositButtonPressed,
+  //required VoidCallback onDepositButtonPressed,
+  VoidCallback? onCreateButtonPressed,
+  final void Function(Token)? onDepositButtonPressed,
   required TextEditingController controller,
   required Key? key,
   List<int>? preimage,
@@ -99,7 +101,7 @@ showDepositDialog({
                   Row(
                     children: [
                       InfoItemWidget(
-                          id: "Deposit ID", value: htlc.id.toString()),
+                          id: "Deposit ID", value: htlc.id.toString(), shrinkable: false,),
                       const SizedBox(
                         width: 15.0,
                       ),
@@ -108,6 +110,7 @@ showDepositDialog({
                         value: (_creatingSwap)
                             ? htlc.hashLocked.toString()
                             : htlc.timeLocked.toString(),
+                        shrinkable: false,
                       )
                     ],
                   ),
@@ -308,9 +311,13 @@ showDepositDialog({
                           style: Theme.of(context).textTheme.bodyText1,
                         ),
                         onPressed: () async {
-                          if (valid == true || _creatingSwap) {
+                          if (_creatingSwap) {
+                            print("creating swap");
+                            onCreateButtonPressed?.call();
+                          }
+                          else if (valid == true) {
                             print("valid");
-                            onDepositButtonPressed();
+                            onDepositButtonPressed!(_selectedToken);
                           } else {
                             if (controller.text.isEmpty) {
                               controller.text = " ";
