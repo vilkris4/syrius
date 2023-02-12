@@ -8,6 +8,7 @@ class CopyToClipboardIcon extends StatelessWidget {
   final Color? hoverColor;
   final MaterialTapTargetSize materialTapTargetSize;
   final IconData icon;
+  final EdgeInsets padding;
 
   const CopyToClipboardIcon(
     this.textToBeCopied, {
@@ -15,6 +16,7 @@ class CopyToClipboardIcon extends StatelessWidget {
     this.hoverColor,
     this.materialTapTargetSize = MaterialTapTargetSize.padded,
     this.icon = Icons.content_copy,
+    this.padding = const EdgeInsets.all(8.0),
     Key? key,
   }) : super(key: key);
 
@@ -24,7 +26,7 @@ class CopyToClipboardIcon extends StatelessWidget {
       materialTapTargetSize: materialTapTargetSize,
       hoverColor: hoverColor,
       constraints: const BoxConstraints.tightForFinite(),
-      padding: const EdgeInsets.all(8.0),
+      padding: padding,
       child: Icon(
         icon,
         color: iconColor,
