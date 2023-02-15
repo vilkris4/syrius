@@ -251,18 +251,17 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
                                 return ActiveSwapsListItem(
                                   key: ValueKey(htlc.id.toString()),
                                   htlcInfo: htlc,
-                                  getCurrentStatus: _inspectHtlc,
                                   onStepperNotificationSeeMorePressed: widget
                                       .onStepperNotificationSeeMorePressed,
                                 );
                               });
                         } else {
                           if (!sl.get<ActiveSwapsWorker>().synced) {
-                            return Column (
-                                children: [
-                                  const SyriusLoadingWidget(),
-                                  Text("Syncing swap history. Please wait..."),
-                                  ],
+                            return Column(
+                              children: [
+                                const SyriusLoadingWidget(),
+                                Text("Syncing swap history. Please wait..."),
+                              ],
                             );
                           }
                           if (_searchKeyWordController.text.isNotEmpty) {

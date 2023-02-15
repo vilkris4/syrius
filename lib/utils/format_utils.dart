@@ -38,35 +38,6 @@ class FormatUtils {
     return DateFormat(dateFormat).format(date);
   }
 
-  static String formatExpirationTime(int expirationTime) {
-    const int minute = 60;
-    const int hour = 60 * minute;
-    const int day = 24 * hour;
-
-    int s, m, h, d = 0;
-    String formattedTime = "";
-
-    if (expirationTime > day) {
-      d = expirationTime ~/ day;
-      expirationTime %= day;
-      formattedTime += "$d d ";
-    }
-    if (expirationTime > hour) {
-      h = expirationTime ~/ hour;
-      expirationTime %= hour;
-      formattedTime += "$h h ";
-    }
-    if (expirationTime > minute) {
-      m = expirationTime ~/ minute;
-      expirationTime %= minute;
-      formattedTime += "$m min ";
-    }
-    s = expirationTime.remainder(minute);
-    formattedTime += "$s s";
-
-    return (formattedTime);
-  }
-
   static String extractNameFromEnum<T>(T enumValue) {
     String valueName = enumValue.toString().split('.')[1];
     if (RegExp(r'^[a-z]+[A-Z]+').hasMatch(valueName)) {
