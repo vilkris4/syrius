@@ -76,14 +76,14 @@ showUnlockDialog({
               Row(
                 children: [
                   InfoItemWidget(
-                    id: "Deposit ID",
+                    label: "Deposit ID",
                     value: htlc.id.toString(),
                   ),
                   const SizedBox(
                     width: 15.0,
                   ),
                   InfoItemWidget(
-                    id: "Sender",
+                    label: "Sender",
                     value: htlc.timeLocked.toString(),
                   ),
                 ], // Deposit ID and Sender (info widgets)

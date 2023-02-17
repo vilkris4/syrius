@@ -101,14 +101,14 @@ showDepositDialog({
                   Row(
                     children: [
                       InfoItemWidget(
-                        id: "Deposit ID",
+                        label: "Deposit ID",
                         value: htlc.id.toString(),
                       ),
                       const SizedBox(
                         width: 15.0,
                       ),
                       InfoItemWidget(
-                        id: "Recipient",
+                        label: "Recipient",
                         value: (_creatingSwap)
                             ? htlc.hashLocked.toString()
                             : htlc.timeLocked.toString(),

@@ -212,6 +212,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
   }
 
   Widget _getInfoItems() {
+    final hasId = widget.htlcInfo!.id.toString() != "0" * 64;
     final preimage = _getPreimage();
     final multiplier = preimage.isEmpty ? 0.18 : 0.139;
     double itemWidth = MediaQuery.of(context).size.width * multiplier;
@@ -219,24 +220,26 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
     final List<Widget> children = [];
     children.addAll([
       InfoItemWidget(
-        id: 'Deposit ID',
-        value: (widget.htlcInfo!.id.toString()),
+        label: 'Deposit ID',
+        value: hasId ? widget.htlcInfo!.id.toString() : 'Pending...',
         width: itemWidth,
+        canBeCopied: hasId,
+        truncateValue: hasId,
       ),
       InfoItemWidget(
-        id: 'Hashlock',
+        label: 'Hashlock',
         value: FormatUtils.encodeHexString((widget.htlcInfo!.hashLock)!)
             .toString(),
         width: itemWidth,
       ),
       _isIncomingDeposit()
           ? InfoItemWidget(
-              id: 'Sender',
+              label: 'Sender',
               value: widget.htlcInfo!.timeLocked.toString(),
               width: itemWidth,
             )
           : InfoItemWidget(
-              id: 'Recipient',
+              label: 'Recipient',
               value: widget.htlcInfo!.hashLocked.toString(),
               width: itemWidth,
             ),
@@ -244,7 +247,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
     if (preimage.isNotEmpty) {
       children.add(
         InfoItemWidget(
-          id: 'Secret',
+          label: 'Secret',
           value: preimage,
           width: itemWidth,
         ),

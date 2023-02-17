@@ -3,30 +3,28 @@ import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/format_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/icons/copy_to_clipboard_icon.dart';
 
-class InfoItemWidget extends StatefulWidget {
-  final String id;
+class InfoItemWidget extends StatelessWidget {
+  final String label;
   final String value;
   final double width;
+  final bool canBeCopied;
+  final bool truncateValue;
 
   const InfoItemWidget({
-    required this.id,
+    required this.label,
     required this.value,
     this.width = 240.0,
+    this.canBeCopied = true,
+    this.truncateValue = true,
     Key? key,
   }) : super(key: key);
 
   @override
-  State<InfoItemWidget> createState() => _InfoItemWidgetState();
-}
-
-class _InfoItemWidgetState extends State<InfoItemWidget> {
-  @override
   Widget build(BuildContext context) {
-    final shouldShrink = widget.width < 230;
-    final hasValue = widget.value != "0" * 64;
+    final shouldShrink = width < 230;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 15.0),
-      width: widget.width,
+      width: width,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(
           8.0,
@@ -39,7 +37,7 @@ class _InfoItemWidgetState extends State<InfoItemWidget> {
           Visibility(
             visible: shouldShrink,
             child: Text(
-              widget.id,
+              label,
               style: Theme.of(context).textTheme.subtitle1,
             ),
           ),
@@ -48,7 +46,7 @@ class _InfoItemWidgetState extends State<InfoItemWidget> {
               Visibility(
                 visible: !shouldShrink,
                 child: Text(
-                  widget.id,
+                  label,
                   style: Theme.of(context).textTheme.subtitle1,
                 ),
               ),
@@ -56,23 +54,17 @@ class _InfoItemWidgetState extends State<InfoItemWidget> {
                 visible: !shouldShrink,
                 child: const Spacer(),
               ),
-              hasValue
-                  ? Text(
-                      FormatUtils.formatLongString(widget.value),
-                      style: Theme.of(context).textTheme.bodyText2,
-                      textAlign: TextAlign.center,
-                    )
-                  : Text(
-                      "Pending...",
-                      style: Theme.of(context).textTheme.bodyText2,
-                      textAlign: TextAlign.center,
-                    ),
+              Text(
+                truncateValue ? FormatUtils.formatLongString(value) : value,
+                style: Theme.of(context).textTheme.bodyText2,
+                textAlign: TextAlign.center,
+              ),
               Visibility(
-                  visible: hasValue && shouldShrink, child: const Spacer()),
+                  visible: canBeCopied && shouldShrink, child: const Spacer()),
               Visibility(
-                visible: hasValue,
+                visible: canBeCopied,
                 child: CopyToClipboardIcon(
-                  widget.value,
+                  value,
                   iconColor: AppColors.lightPrimaryContainer,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   padding: const EdgeInsets.only(left: 8.0),
