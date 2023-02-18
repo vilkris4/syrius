@@ -46,7 +46,6 @@ class _DialogInfoItemWidgetState extends State<DialogInfoItemWidget> {
                 widget.id,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: (Theme.of(context).textTheme.subtitle1?.color)),
-                //.subtitle1,
                 textAlign: TextAlign.center,
               ),
               const Spacer(),
@@ -70,24 +69,22 @@ class _DialogInfoItemWidgetState extends State<DialogInfoItemWidget> {
               Visibility(
                 child: Row(children: [
                   Text(
-                    " ${widget.token.symbol}",
+                    ' ${widget.token.symbol}',
                     style: Theme.of(context).textTheme.headline4?.copyWith(
                           color: Theme.of(context).colorScheme.inverseSurface,
                         ),
                   ),
                   Text(
-                    "  ●",
+                    '  ●',
                     style: Theme.of(context).textTheme.headline1!.copyWith(
                           color: ColorUtils.getTokenColor(
                               (widget.token.tokenStandard)),
                         ),
                   ),
                 ]),
-                visible: (
-                    widget.id == "Locked amount" ||
-                    widget.id == "You receive" ||
-                    widget.id == "Sending"
-                ),
+                visible: (widget.id == 'Locked amount' ||
+                    widget.id == 'You receive' ||
+                    widget.id == 'Sending'),
               ),
               const Spacer(),
               Text(

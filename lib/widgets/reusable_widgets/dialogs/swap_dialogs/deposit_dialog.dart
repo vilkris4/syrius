@@ -1,36 +1,26 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
-import 'package:intl/intl.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/dashboard/balance_bloc.dart';
+import 'package:zenon_syrius_wallet_flutter/main.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/address_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
-import 'package:zenon_syrius_wallet_flutter/utils/clipboard_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/format_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
-import 'package:zenon_syrius_wallet_flutter/utils/input_validators.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/error_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/info_item_widget.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/input_field.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/loading_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs/swap_dialogs/dialog_info_item_widget.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/icons/copy_to_clipboard_icon.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/amount_input_field.dart';
+import 'package:zenon_syrius_wallet_flutter/utils/zts_utils.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
-
-import '../../../../blocs/dashboard/balance_bloc.dart';
-import '../../../../main.dart';
-import '../../../../utils/zts_utils.dart';
-import '../../dropdown/coin_dropdown.dart';
-import '../../error_widget.dart';
-import '../../icons/copy_to_clipboard_icon.dart';
-import '../../input_field/amount_input_field.dart';
-import '../../input_field/disabled_address_field.dart';
-import '../../loading_widget.dart';
 
 showDepositDialog({
   required BuildContext context,
   required String title,
   required HtlcInfo htlc,
   required Token token,
-  //required VoidCallback onDepositButtonPressed,
   VoidCallback? onCreateButtonPressed,
   final void Function(Token)? onDepositButtonPressed,
   required TextEditingController controller,
@@ -39,9 +29,8 @@ showDepositDialog({
 }) {
   bool? valid = false;
   controller.text = '';
-  num ratio = (valid) ? controller.text.toNum() : 0;
+  num ratio = 0;
   bool ratioReversed = false;
-  StreamController _streamController = StreamController<String>.broadcast();
   Token _selectedToken =
       (token.tokenStandard.toString() == kZnnCoin.tokenStandard.toString())
           ? kQsrCoin
@@ -62,7 +51,7 @@ showDepositDialog({
             ),
             backgroundColor: Theme.of(context).colorScheme.primaryContainer,
             content: SizedBox(
-              width: 495, //475.0,
+              width: 495,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -95,20 +84,20 @@ showDepositDialog({
                           size: 25.0,
                         ),
                       ),
-                    ], // Title and X
+                    ],
                   ),
                   kVerticalSpacing,
                   Row(
                     children: [
                       InfoItemWidget(
-                        label: "Deposit ID",
+                        label: 'Deposit ID',
                         value: htlc.id.toString(),
                       ),
                       const SizedBox(
                         width: 15.0,
                       ),
                       InfoItemWidget(
-                        label: "Recipient",
+                        label: 'Recipient',
                         value: (_creatingSwap)
                             ? htlc.hashLocked.toString()
                             : htlc.timeLocked.toString(),
@@ -132,7 +121,6 @@ showDepositDialog({
                                 controller: controller,
                                 accountInfo: (snapshot
                                     .data![htlc.hashLocked.toString()]!),
-                                //TODO: check if this is correct, timelocked???
                                 valuePadding: 20.0,
                                 textColor: Theme.of(context)
                                     .colorScheme
@@ -156,10 +144,6 @@ showDepositDialog({
                                   });
                                 },
                               );
-
-                              //if (_tokensWithBalance.length == kDualCoin.length) {
-                              //  _addTokensWithBalance();
-                              // }
                             }
                             return const SyriusLoadingWidget();
                           }
@@ -171,7 +155,7 @@ showDepositDialog({
                   Visibility(
                     visible: !_creatingSwap,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10.0),
+                      padding: const EdgeInsets.only(top: 13.0),
                       child: Row(children: [
                         Expanded(
                             child: Align(
@@ -182,8 +166,8 @@ showDepositDialog({
                                   ),
                                   Text(
                                       (!ratioReversed)
-                                          ? "1 ${token.symbol} = ${ratio.toStringAsFixed(5)} ${_selectedToken.symbol}"
-                                          : "1 ${_selectedToken.symbol} = ${ratio.toStringAsFixed(5)} ${token.symbol}",
+                                          ? '1 ${token.symbol} = ${ratio.toStringAsFixed(5)} ${_selectedToken.symbol}'
+                                          : '1 ${_selectedToken.symbol} = ${ratio.toStringAsFixed(5)} ${token.symbol}',
                                       style: const TextStyle(
                                         color:
                                             AppColors.unselectedSeedChoiceColor,
@@ -232,9 +216,9 @@ showDepositDialog({
                   ),
                   kVerticalSpacing,
                   DialogInfoItemWidget(
-                    id: (_creatingSwap) ? "Sending" : "You receive",
-                    value: AmountUtils.addDecimals(htlc.amount, token.decimals)
-                        .toString(),
+                    id: (_creatingSwap) ? 'Sending' : 'You receive',
+                    value:
+                        FormatUtils.formatAtomicSwapAmount(htlc.amount, token),
                     address: Address.parse(htlc.tokenStandard.toString()),
                     token: token,
                   ),
@@ -242,7 +226,7 @@ showDepositDialog({
                   (preimage == null)
                       ? Container()
                       : Visibility(
-                          visible: preimage.isNotEmpty ?? false,
+                          visible: preimage.isNotEmpty,
                           child: Row(children: [
                             Flexible(
                               fit: FlexFit.tight,
@@ -275,10 +259,9 @@ showDepositDialog({
                                         child: Row(
                                           children: [
                                             Text(
-                                              //"preimage",
                                               FormatUtils.formatLongString(
                                                   FormatUtils.encodeHexString(
-                                                      preimage!)),
+                                                      preimage)),
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2,
@@ -301,8 +284,7 @@ showDepositDialog({
                             )
                           ]),
                         ),
-                  kVerticalSpacing,
-                  kVerticalSpacing,
+                  Visibility(child: kVerticalSpacing, visible: _creatingSwap),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -313,15 +295,13 @@ showDepositDialog({
                         ),
                         onPressed: () async {
                           if (_creatingSwap) {
-                            print("creating swap");
                             onCreateButtonPressed?.call();
                           } else if (valid == true) {
-                            print("valid");
                             onDepositButtonPressed!(_selectedToken);
                           } else {
                             if (controller.text.isEmpty) {
-                              controller.text = " ";
-                              controller.text = "";
+                              controller.text = ' ';
+                              controller.text = '';
                             }
                           }
                         },
@@ -374,13 +354,13 @@ showDepositDialog({
                                             text: FormatUtils.formatDate(
                                                 htlc.expirationTime * 1000,
                                                 dateFormat:
-                                                    "hh:mm a, MM/dd/yyyy"),
+                                                    'hh:mm a, MM/dd/yyyy'),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
                                           ),
                                           TextSpan(
-                                            text: " to unlock the deposit.",
+                                            text: ' to unlock the deposit.',
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .subtitle1,
@@ -428,13 +408,13 @@ showDepositDialog({
                                             children: [
                                               TextSpan(
                                                 text:
-                                                    "${AmountUtils.addDecimals(htlc.amount, token.decimals).toString()} ${token.symbol} ",
+                                                    '${FormatUtils.formatAtomicSwapAmount(htlc.amount, token)} ${token.symbol} ',
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2,
                                               ),
                                               TextSpan(
-                                                text: "into ",
+                                                text: 'into ',
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .subtitle1,
@@ -457,7 +437,7 @@ showDepositDialog({
                                               ),
                                               TextSpan(
                                                 text:
-                                                    " after the recipient unlocks the deposit.",
+                                                    ' after the recipient unlocks the deposit.',
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .subtitle1,

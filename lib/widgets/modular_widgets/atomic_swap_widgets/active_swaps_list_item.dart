@@ -1,3 +1,6 @@
+// TODO: Hide expired GetByID swaps?? Confirm with Vilkris
+// TODO: display when a swap is being auto-unlocked
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -158,7 +161,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
   Widget _getHeader(BuildContext context, Token token) {
     return Row(children: [
       Text(
-        '${FormatUtils.formatAtomicSwapAmount(widget.htlcInfo!.amount, widget.htlcInfo!.tokenStandard)} ${token.symbol}',
+        '${FormatUtils.formatAtomicSwapAmount(widget.htlcInfo!.amount, token)} ${token.symbol}',
         style: Theme.of(context).textTheme.headline5,
       ),
       Text(
@@ -212,7 +215,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
   }
 
   Widget _getInfoItems() {
-    final hasId = widget.htlcInfo!.id.toString() != "0" * 64;
+    final hasId = widget.htlcInfo!.id.toString() != '0' * 64;
     final preimage = _getPreimage();
     final multiplier = preimage.isEmpty ? 0.18 : 0.139;
     double itemWidth = MediaQuery.of(context).size.width * multiplier;
@@ -297,17 +300,16 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
         model.stream.listen(
           (event) {
             if (event is AccountBlockTemplate) {
+              //TODO: confirmation notification
               //_sendConfirmationNotification();
-              print('reclaim successful!');
             }
           },
           onError: (error) {
-            //_sendPaymentButtonKey.currentState?.animateReverse();
             setState(() {
               _isReclaiming = false;
             });
+            //TODO: error notification
             //_sendErrorNotification(error);
-            print('reclaim error');
           },
         );
       },
@@ -353,14 +355,13 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
         model.stream.listen(
           (event) {
             if (event is AccountBlockTemplate) {
+              //TODO: confirmation notification
               //_sendConfirmationNotification();
-              print('deposit successful!');
             }
           },
           onError: (error) {
-            //_sendPaymentButtonKey.currentState?.animateReverse();
+            //TODO: error notification
             //_sendErrorNotification(error);
-            print('deposit error');
           },
         );
       },
@@ -400,7 +401,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
       onDepositButtonPressed: (_selectedToken) async {
         _depositFunds(model, _selectedToken);
 
-        final json = '{"id": "${"0" * 64}",'
+        final json = '{"id": "${'0' * Hash.length * 2}",'
             '"timeLocked": "${widget.htlcInfo?.hashLocked}",'
             '"hashLocked": "${widget.htlcInfo?.timeLocked}",'
             '"tokenStandard": "${_selectedToken.tokenStandard}",'
@@ -410,26 +411,17 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
             '"keyMaxSize": ${widget.htlcInfo?.keyMaxSize},'
             '"hashLock": "${base64.encode((widget.htlcInfo?.hashLock)!)}"}';
 
-        await sl.get<ActiveSwapsWorker>().addPendingSwap(
-              json: json,
-              //preimage: preimage,
-            );
+        await sl.get<ActiveSwapsWorker>().addPendingSwap(json: json);
         setState(() {});
-
-        //_sendUnlockHtlcBlock();
-        //_sendSwapBlock();
         Navigator.pop(context);
       },
     );
   }
 
-  void _depositFunds(CreateHtlcBloc model, Token _selectedToken) {
-    //Navigator.pop(context);
-    //_sendPaymentButtonKey.currentState?.animateForward();
-    print('_depositFunds');
+  void _depositFunds(CreateHtlcBloc model, Token selectedToken) {
     model.createHtlc(
       timeLocked: widget.htlcInfo!.hashLocked,
-      token: _selectedToken,
+      token: selectedToken,
       amount: _depositAmountController.text,
       hashLocked: widget.htlcInfo!.timeLocked,
       expirationTime: widget.htlcInfo!.expirationTime,
@@ -446,17 +438,16 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
         model.stream.listen(
           (event) {
             if (event is AccountBlockTemplate) {
+              //TODO: confirmation notification
               //_sendConfirmationNotification();
-              print('unlock successful!');
             }
           },
           onError: (error) {
-            //_sendPaymentButtonKey.currentState?.animateReverse();
             setState(() {
               _isUnlocking = false;
             });
+            //TODO: error notification
             //_sendErrorNotification(error);
-            print('unlock error');
           },
         );
       },
@@ -483,7 +474,6 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
                       .headline6
                       ?.copyWith(color: AppColors.backgroundLight),
                 ),
-                //),
               ],
             ),
           )),
@@ -503,12 +493,9 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
       preimage: _getPreimage(),
       onUnlockButtonPressed: () {
         setState(() {
-          print('Is unlocking');
           _isUnlocking = true;
         });
         _unlockSwap(model);
-        //_sendUnlockHtlcBlock();
-        //_sendSwapBlock();
         Navigator.pop(context);
       },
     );

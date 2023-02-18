@@ -1,8 +1,3 @@
-//TODO:
-// Confirm CardScaffold description
-// Remove pending swap when creation fails
-// Save encrypted preimage
-
 import 'dart:convert';
 import 'dart:math';
 
@@ -56,15 +51,13 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
   final GlobalKey<FormState> _hashlockKey = GlobalKey();
   final GlobalKey<LoadingButtonState> _createAtomicSwapButtonKey = GlobalKey();
 
-  final CreateHtlcBloc _createHtlcBloc = CreateHtlcBloc();
-
   String? _selectedSelfAddress = kSelectedAddress;
   String? _selectedLockDuration = kLockDurations[1];
   String? _selectedHashType = kHashTypes.first;
   Token _selectedToken = kDualCoin.first;
-  List<int> preimage = [];
+  List<int> _preimage = [];
   bool _amountIsValid = false;
-  int? expirationTime;
+  int? _expirationTime;
 
   @override
   void initState() {
@@ -72,18 +65,29 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
     sl.get<BalanceBloc>().getBalanceForAllAddresses();
   }
 
+  //TODO: Confirm CardScaffold description
   @override
   Widget build(BuildContext context) {
     return CardScaffold(
       title: '  Create Atomic Swap',
-      description: 'Create an atomic swap on the Zenon Network of Momentum.'
-          'The swap must be unlocked before the expiration time in order for the'
-          'recipient to receive the funds. If two or more parties use the same '
-          'hashlock, all active swaps using the hashlock may be unlocked '
-          'simultaneously. By default, the hashlock is a 32-byte random value and '
-          'users should treat it like a password. If the hashlock is lost, '
-          'participants must wait until the swap has expired in order to reclaim '
-          'their funds.',
+      description: 'Create an atomic swap on the Zenon Network of Momentum.\n'
+          'This allows two parties to conduct a trade without the need for a '
+          'trusted third party.\n'
+          'An atomic swap is initiated when one party creates a swap destined '
+          'for another party. Before submitting the swap to the network, they '
+          'will generate a random 32-character secret. Users should treat this '
+          'like a password.\n'
+          'If the secret is lost, participants must wait until the swap has '
+          'expired in order to reclaim their funds.\n'
+          'The hashlock is derived from this secret and is used by both parties '
+          'to perform the atomic swap.\n'
+          'If two or more parties use the same hashlock, all active swaps using '
+          'the hashlock may be unlocked simultaneously. The recipient\'s '
+          'Syrius wallet will automatically unlock their funds if it is '
+          'connected to a synced node. Otherwise, a vigilant third party may '
+          'unlock the the swap on their behalf.\n'
+          'Every swap must be unlocked before its expiration time elapses in '
+          'order for the recipient to receive the funds.',
       childBuilder: () => _getWidgetBody(context),
     );
   }
@@ -95,7 +99,7 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
         children: [
           _getInputFields(),
           Visibility(
-              visible: preimage.isNotEmpty,
+              visible: _preimage.isNotEmpty,
               child: Column(children: [
                 kVerticalSpacing,
                 _generatePreimageBox(),
@@ -240,12 +244,12 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
                     child: Row(children: [
                       Text(
                         FormatUtils.formatLongString(
-                            FormatUtils.encodeHexString(preimage)),
+                            FormatUtils.encodeHexString(_preimage)),
                         style: Theme.of(context).textTheme.bodyText2,
                         textScaleFactor: 1.2,
                       ),
                       CopyToClipboardIcon(
-                        FormatUtils.encodeHexString(preimage),
+                        FormatUtils.encodeHexString(_preimage),
                         iconColor: AppColors.darkHintTextColor,
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
@@ -274,7 +278,7 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
           onPressed: () => {
             ClipboardUtils.pasteToClipboard(context, (String value) {
               _hashlockController.text = value;
-              preimage = [];
+              _preimage = [];
               setState(() {});
             })
           },
@@ -286,10 +290,10 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
 
   void _onGeneratePressed(
       String? hashType, BuildContext context, Function(String) callback) async {
-    preimage = generatePreimage();
+    _preimage = generatePreimage();
     String hash = (hashType == kHashTypes[1])
-        ? Hash.fromBytes(await Crypto.sha256Bytes(preimage)).toString()
-        : Hash.digest(preimage).toString();
+        ? Hash.fromBytes(await Crypto.sha256Bytes(_preimage)).toString()
+        : Hash.digest(_preimage).toString();
 
     callback(hash);
   }
@@ -299,7 +303,6 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
       onModelReady: (model) {
         model.stream.listen(
           (event) {
-            print("_getCreateAtomicSwapViewModel: $event");
             if (event is AccountBlockTemplate) {
               _sendConfirmationNotification();
               setState(() {
@@ -308,15 +311,11 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
             }
           },
           onError: (error) {
+            //TODO: remove pending swap?
             _sendErrorNotification(error);
             setState(() {
               _createAtomicSwapButtonKey.currentState?.animateReverse();
             });
-            //TODO: remove pending swap???
-            //sl.get<HtlcListBloc>().removePendingSwap(
-            //   hashLocked: Address.parse(_recipientController.text),
-            //  hashLock: (Hash.parse(_hashlockController.text).getBytes())!,
-            // );
           },
         );
       },
@@ -338,7 +337,7 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
   }
 
   void _onCreateButtonPressed(CreateHtlcBloc model) async {
-    final json = '{"id": "${"0" * 64}",'
+    final json = '{"id": "${'0' * Hash.length * 2}",'
         '"timeLocked": "$_selectedSelfAddress",'
         '"hashLocked": "${Address.parse(_recipientController.text)}",'
         '"tokenStandard": "${_selectedToken.tokenStandard}",'
@@ -358,14 +357,12 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
       token: _selectedToken,
       controller: _secretController,
       key: _secretKey,
-      preimage: preimage,
+      preimage: _preimage,
       onCreateButtonPressed: () async {
-        print("create button pressed");
         sl.get<ActiveSwapsWorker>().addPendingSwap(
               json: json,
-              preimage: preimage,
+              preimage: _preimage,
             );
-        //(preimage.isNotEmpty) ? _savePreimage(preimage) : null;
         _sendCreateHtlcBlock(model);
         Navigator.pop(context);
       },
@@ -379,7 +376,7 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
       token: _selectedToken,
       amount: _amountController.text,
       hashLocked: Address.parse(_recipientController.text),
-      expirationTime: expirationTime!,
+      expirationTime: _expirationTime!,
       hashType: (_selectedHashType == kHashTypes.first) ? 0 : 1,
       keyMaxSize: _hashlockController.text.length,
       hashLock: (Hash.parse(_hashlockController.text).getBytes())!,
@@ -392,48 +389,27 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
   }
 
   Future<int> _getExpirationTime(String lockDuration) async {
-    int _currentTime = (await zenon!.ledger.getFrontierMomentum()).timestamp;
-    int _expirationTime = 0;
+    int currentTime = (await zenon!.ledger.getFrontierMomentum()).timestamp;
+    int expirationTime = 0;
 
     switch (lockDuration) {
-      case "3 hours":
-        _expirationTime = htlcTimelockUnitSec * 3;
+      case '3 hours':
+        expirationTime = htlcTimelockUnitSec * 3;
         break;
-      case "24 hours":
-        _expirationTime = htlcTimelockUnitSec * 24;
+      case '24 hours':
+        expirationTime = htlcTimelockUnitSec * 24;
         break;
       default:
-        _expirationTime = htlcTimelockUnitSec * 12;
+        expirationTime = htlcTimelockUnitSec * 12;
     }
-    expirationTime = _expirationTime + _currentTime;
-    return expirationTime!;
+    _expirationTime = expirationTime + currentTime;
+    return _expirationTime!;
   }
 
   bool _isInputValid() =>
       _amountIsValid &&
       InputValidators.checkAddress(_recipientController.text) == null &&
       InputValidators.checkHash(_hashlockController.text) == null;
-
-  // TODO: encrypt preimage before saving
-  /*
-  Future<void> _savePreimage(List<int> _preimage) async {
-    String hashLock = (Hash.parse(_hashlockController.text)).toString();
-    String preimage = FormatUtils.encodeHexString(_preimage);
-    Map preimageMap = sharedPrefsService!.get(
-      kHtlcCreatedPreimagesKey,
-      defaultValue: {},
-    );
-
-    preimageMap.addAll({
-      hashLock: preimage,
-    });
-
-    await sharedPrefsService!.put(
-      kHtlcCreatedPreimagesKey,
-      preimageMap,
-    );
-  }
-   */
 
   void _sendConfirmationNotification() {
     sl.get<NotificationsBloc>().addNotification(

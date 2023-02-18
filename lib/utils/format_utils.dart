@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:decimal/decimal.dart';
 import 'package:flutter/services.dart';
 import 'package:hex/hex.dart';
 import 'package:intl/intl.dart';
@@ -71,9 +72,15 @@ class FormatUtils {
     }
   }
 
-  static String formatAtomicSwapAmount(
-      int amount, TokenStandard tokenStandard) {
+  static String formatAtomicSwapAmount(int amount, Token token) {
+    num decimalAmount = AmountUtils.addDecimals(amount, token.decimals);
+
+    // required to avoid 1e-7 and 1e-8
+    if (decimalAmount < 1) {
+      return Decimal.parse(decimalAmount.toString()).toString();
+    }
+
     NumberFormat commaFormat = NumberFormat.decimalPattern('en_us');
-    return commaFormat.format(amount / pow(10, 8));
+    return commaFormat.format(decimalAmount);
   }
 }

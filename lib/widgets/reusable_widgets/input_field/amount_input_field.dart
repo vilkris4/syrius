@@ -34,7 +34,6 @@ class AmountInputField extends StatefulWidget {
 class _AmountInputFieldState extends State<AmountInputField> {
   final List<Token?> _tokensWithBalance = [];
   Token? _selectedToken;
-  bool valid = false;
 
   @override
   void initState() {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:provider/provider.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/active_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/auto_receive_tx_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/lock_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/node_sync_status_bloc.dart';
@@ -37,8 +38,6 @@ import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/staking
 import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/tokens_tab_child.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/transfer_tab_child.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
-
-import '../blocs/active_swaps_worker.dart';
 
 enum Tabs {
   dashboard,
@@ -488,7 +487,6 @@ class _MainAppContainerState extends State<MainAppContainer>
       (timer) => _lockBloc.addEvent(LockEvent.navigateToLock),
     );
     _lockBloc.addEvent(LockEvent.navigateToPreviousTab);
-    //sl<ActiveSwapsWorker>().initCheckHtlcContractBlocks();
   }
 
   @override

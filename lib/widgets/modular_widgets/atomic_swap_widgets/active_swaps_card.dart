@@ -48,21 +48,6 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
       StreamController();
   late StreamSubscription _textChangesSubscription;
 
-  bool _sortAscending = true;
-
-  final StreamController<List<HtlcInfo>> _streamController =
-      StreamController<List<HtlcInfo>>.broadcast();
-
-  StreamController<List<HtlcInfo>> get streamController => _streamController;
-
-  Stream<List<HtlcInfo>> get dataStream => _streamController.stream;
-
-  StreamSink<List<HtlcInfo>> get dataSink => _streamController.sink;
-  List<HtlcInfo>? _activewapList;
-  List<HtlcInfo> _filteredSwapList = [];
-
-  bool _inspectHtlc = false;
-
   final _onSearchInputChangedSubject = BehaviorSubject<String?>.seeded(null);
 
   Sink<String?> get onRefreshResultsRequest =>
@@ -75,9 +60,20 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
     InfiniteScrollBlocListingState<HtlcInfo>(),
   );
 
-  final _subscriptions = CompositeSubscription();
+  final StreamController<List<HtlcInfo>> _streamController =
+      StreamController<List<HtlcInfo>>.broadcast();
+  StreamController<List<HtlcInfo>> get streamController => _streamController;
+
+  Stream<List<HtlcInfo>> get dataStream => _streamController.stream;
+  StreamSink<List<HtlcInfo>> get dataSink => _streamController.sink;
 
   final List<ActiveSwapsFilterTag> selectedActiveSwapsFilterTag = [];
+
+  List<HtlcInfo>? _activewapList;
+  List<HtlcInfo> _filteredSwapList = [];
+
+  bool _retrieveHtlc = false;
+  bool _sortAscending = true;
 
   @override
   void initState() {
@@ -87,12 +83,10 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
         _filteredSwapList = event;
       });
     });
-    //load(streamController);
 
     _onSearchInputChangedSubject.stream
         .flatMap((_) => _doRefreshResults())
-        .listen(_onNewListingStateController.add)
-        .addTo(_subscriptions);
+        .listen(_onNewListingStateController.add);
 
     _textChangesSubscription = _textChangeStreamController.stream
         .debounceTime(
@@ -104,12 +98,7 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
     });
   }
 
-  load(StreamController sc) async {
-    //var htlcList = await sl.get<HtlcListBloc>().getHtlcList();
-    //var htlcList = sl.get<ActiveSwapsWorker>().cachedSwaps;
-    //sc.add(sl.get<ActiveSwapsWorker>().cachedSwaps);
-    print("[!] Load()");
-
+  void _updateList(StreamController sc) async {
     sl.get<ActiveSwapsWorker>().controller.stream.listen((event) {
       if (!mounted) {
         return;
@@ -119,8 +108,6 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
         });
       }
     });
-
-    //sc.add(sl.get<ActiveSwapsWorker>().cachedSwaps);
 
     if (_activewapList != null) {
       _filteredSwapList = _activewapList!;
@@ -134,7 +121,7 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
           return;
         }
       }
-      _inspectHtlc = false;
+      _retrieveHtlc = false;
       _filteredSwapList = await _filterActiveSwapsByTags(_filteredSwapList);
 
       _sortAscending
@@ -143,7 +130,7 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
           : _filteredSwapList
               .sort((a, b) => b.expirationTime.compareTo(a.expirationTime));
 
-      sc.add(_filteredSwapList); // <<< THIS LINE
+      sc.add(_filteredSwapList);
     }
   }
 
@@ -151,12 +138,32 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
   Widget build(BuildContext context) {
     return CardScaffold(
         title: ' Active Swaps',
-        childBuilder: () => _getActiveSwapsList(),
+        childBuilder: () => FutureBuilder<List<HtlcInfo>>(
+              future: sl.get<ActiveSwapsWorker>().parseHtlcContractBlocks(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData &&
+                    !snapshot.hasError &&
+                    sl.get<ActiveSwapsWorker>().synced == true) {
+                  _activewapList = snapshot.data!;
+                  _filteredSwapList = _activewapList!;
+                  return _getActiveSwapsList();
+                } else if (snapshot.hasError) {
+                  return const SyriusLoadingWidget();
+                }
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    SyriusLoadingWidget(),
+                    Text('Syncing swap history. Please wait...'),
+                  ],
+                );
+              },
+            ),
         onRefreshPressed: () {
           _searchKeyWordController.clear();
           refreshResults();
         },
-        description: 'This card displays a list of all active atomic swaps. '
+        description: 'This card displays a list of all active atomic swaps.\n '
             'The list can be sorted by expiration time and filtered by type of '
             'swap (incoming, outgoing, in progress, expired, hash) or with a '
             'search query. Once a swap has been reclaimed or unlocked, it will '
@@ -164,7 +171,6 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
   }
 
   Widget _getActiveSwapsList() {
-    print('getActiveSwapsList: ${_filteredSwapList.length}');
     return Padding(
       padding: const EdgeInsets.all(15.0),
       child: Column(
@@ -189,89 +195,51 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
           Expanded(
             child: Scrollbar(
               controller: _scrollController,
-              // TODO: THROW A FUTUREBUILDER IN HERE TO WAIT FOR THE DATA TO LOAD FIRST
-
-              child: (_activewapList == null)
-                  ? FutureBuilder<List<HtlcInfo>>(
-                      future:
-                          sl.get<ActiveSwapsWorker>().parseHtlcContractBlocks(),
-                      builder: (context, snapshot) {
-
-                        if (snapshot.hasData && !snapshot.hasError && sl.get<ActiveSwapsWorker>().synced == true) {
-                          _activewapList = snapshot.data!;
-                          _filteredSwapList = _activewapList!;
-                          print("FUTURE: LOADING STREAM CONTROLLER");
-                          load(streamController);
-                          print("RETURNING ACTIVE SWAPS LIST");
-                          return _getActiveSwapsList();
-                        } else if (snapshot.hasError) {
-                          return const SyriusLoadingWidget();
-                        }
-                        return Column (
-                          children: [
-                            const SyriusLoadingWidget(),
-                            Text("Syncing swap history. Please wait..."),
-                          ],
-                        );
-                      },
-                    )
-                  : StreamBuilder<List<HtlcInfo>>(
-                      //child: StreamBuilder<HtlcInfo>(
-                      initialData: _activewapList,
-                      //sl.get<ActiveSwapsWorker>().cachedSwaps, //sl.get<HtlcListBloc>().allActiveSwaps,
-                      stream: streamController.stream,
-                      //sl.get<HtlcListBloc>().streamController.stream,
-                      //streamController.stream,
-                      builder: (_, snapshot) {
-                        if (snapshot.hasError) {
-                          return SyriusErrorWidget(snapshot.error!);
-                        }
-                        /*
-                  if (snapshot.connectionState == ConnectionState.active) {
-                    if (snapshot.hasData) {
+              child: StreamBuilder<List<HtlcInfo>>(
+                initialData: _activewapList,
+                stream: streamController.stream,
+                builder: (_, snapshot) {
+                  if (snapshot.hasError) {
+                    return SyriusErrorWidget(snapshot.error!);
+                  }
+                  if ((snapshot.data?.length)! > 0 &&
+                      sl.get<ActiveSwapsWorker>().synced == true) {
+                    return ListView.separated(
+                        controller: _scrollController,
+                        cacheExtent: 10000,
+                        itemCount: snapshot.data?.length ?? 0,
+                        separatorBuilder: (BuildContext context, int index) {
+                          return const SizedBox(
+                            height: 15.0,
+                          );
+                        },
+                        itemBuilder: (_, index) {
+                          final htlc = snapshot.data![index];
+                          return ActiveSwapsListItem(
+                            key: ValueKey(htlc.id.toString()),
+                            htlcInfo: htlc,
+                            onStepperNotificationSeeMorePressed:
+                                widget.onStepperNotificationSeeMorePressed,
+                          );
+                        });
+                  } else {
+                    if (!sl.get<ActiveSwapsWorker>().synced) {
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          SyriusLoadingWidget(),
+                          Text('Syncing swap history. Please wait...'),
+                        ],
+                      );
+                    }
+                    if (_searchKeyWordController.text.isNotEmpty) {
+                      return const SyriusErrorWidget('No results found');
                     } else {
-                      return const SyriusLoadingWidget();
+                      return const SyriusErrorWidget('No active swaps');
                     }
                   }
-
-                   */
-                        if ((snapshot.data?.length)! > 0 && sl.get<ActiveSwapsWorker>().synced == true) {
-                          return ListView.separated(
-                              controller: _scrollController,
-                              cacheExtent: 10000,
-                              itemCount: snapshot.data?.length ?? 0,
-                              separatorBuilder:
-                                  (BuildContext context, int index) {
-                                return const SizedBox(
-                                  height: 15.0,
-                                );
-                              },
-                              itemBuilder: (_, index) {
-                                final htlc = snapshot.data![index];
-                                return ActiveSwapsListItem(
-                                  key: ValueKey(htlc.id.toString()),
-                                  htlcInfo: htlc,
-                                  onStepperNotificationSeeMorePressed: widget
-                                      .onStepperNotificationSeeMorePressed,
-                                );
-                              });
-                        } else {
-                          if (!sl.get<ActiveSwapsWorker>().synced) {
-                            return Column(
-                              children: [
-                                const SyriusLoadingWidget(),
-                                Text("Syncing swap history. Please wait..."),
-                              ],
-                            );
-                          }
-                          if (_searchKeyWordController.text.isNotEmpty) {
-                            return const SyriusErrorWidget('No results found');
-                          } else {
-                            return const SyriusErrorWidget('No active swaps');
-                          }
-                        }
-                      },
-                    ),
+                },
+              ),
             ),
           ),
         ],
@@ -294,7 +262,7 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
   _getActiveSwapsFilterTags() {
     List<TagWidget> children = [];
     for (var tag in ActiveSwapsFilterTag.values) {
-      (!_inspectHtlc)
+      (!_retrieveHtlc)
           ? children.add(_getActiveSwapsFilterTag(tag, true))
           : children.add(_getActiveSwapsFilterTag(tag, false));
     }
@@ -308,7 +276,7 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
     return TagWidget(
       text: (filterTag != ActiveSwapsFilterTag.sha256)
           ? FormatUtils.extractNameFromEnum<ActiveSwapsFilterTag>(filterTag)
-          : "SHA-256",
+          : 'SHA-256',
       hexColorCode: Theme.of(context)
           .colorScheme
           .primaryContainer
@@ -337,14 +305,6 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
   }
 
   Future<List<HtlcInfo>> _swapLookupByHash(String hashId) async {
-    /*try {
-      HtlcInfo _htlc = await zenon!.embedded.htlc.getHtlcInfoById(Hash.parse(hashId));
-      return [_htlc];
-    } catch (e) {
-      print('HtlcInfo parsing error in _swapLookupByHash: $e');
-    }
-     */
-
     try {
       AccountBlock _block =
           (await zenon!.ledger.getAccountBlockByHash(Hash.parse(hashId)))!;
@@ -354,13 +314,10 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
         if (eq(AbiFunction.extractSignature(entry.encodeSignature()),
             AbiFunction.extractSignature(_block.data))) {
           f = AbiFunction(entry.name!, entry.inputs!);
-          print("${f.name}: ${f.decode(_block.data)}");
-
-          if (f.name == "CreateHtlc") {
-            _inspectHtlc = true;
+          if (f.name == 'CreateHtlc') {
+            _retrieveHtlc = true;
             var data = f.decode(_block.data);
-            final json = '{ '
-                '"id": "${_block.hash}",'
+            final json = '{"id": "${_block.hash}",'
                 '"timeLocked": "${_block.address}",'
                 '"hashLocked": "${data[0]}",'
                 '"tokenStandard": "${_block.tokenStandard}",'
@@ -368,15 +325,13 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
                 '"expirationTime": ${data[1]},'
                 '"hashType": ${data[2]},'
                 '"keyMaxSize": ${data[3]},'
-                '"hashLock": "${base64.encode(data[4])}"'
-                '}';
+                '"hashLock": "${base64.encode(data[4])}"}';
             return [HtlcInfo.fromJson(jsonDecode(json))];
           }
-          //_inspectHtlcBlock = _block;
         }
       }
     } catch (e) {
-      print('AccountBlock Error in _swapLookupByHash: $e');
+      return [];
     }
 
     return [];
@@ -396,8 +351,7 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
 
   Stream<InfiniteScrollBlocListingState<HtlcInfo>> _doRefreshResults() async* {
     yield InfiniteScrollBlocListingState<HtlcInfo>();
-    load(streamController);
-    //yield* _fetchList(0);
+    _updateList(streamController);
   }
 
   Future<List<HtlcInfo>> _filterActiveSwapsBySearchTerm(
@@ -466,7 +420,7 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
     setState(() {
       _sortAscending = !_sortAscending;
     });
-    load(streamController);
+    _updateList(streamController);
   }
 
   @override
