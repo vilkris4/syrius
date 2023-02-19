@@ -51,6 +51,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
 
   StreamSubscription? _expirationSubscription;
   StreamSubscription? _pendingIdSubscription;
+  StreamSubscription? _autoUnlockSubscription;
 
   bool _isReclaiming = false;
   bool _isUnlocking = false;
@@ -83,12 +84,28 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
         }
       });
     }
+
+    if (_isSwapInProgress() && _isIncomingDeposit()) {
+      _autoUnlockSubscription =
+          Stream.periodic(const Duration(seconds: 1)).listen((_) {
+        if (sl
+            .get<ActiveSwapsWorker>()
+            .autoUnlockedSwaps
+            .contains(widget.htlcInfo!.id)) {
+          _autoUnlockSubscription?.cancel();
+          setState(() {
+            _isUnlocking = true;
+          });
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
     _expirationSubscription?.cancel();
     _pendingIdSubscription?.cancel();
+    _autoUnlockSubscription?.cancel();
     super.dispose();
   }
 
@@ -270,7 +287,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
 
   Widget _getButtons(Token token) {
     final List<Widget> buttons = [];
-    if (_isSwapInProgress() && _isIncomingDeposit()) {
+    if (_isSwapInProgress() && _isIncomingDeposit() && !_isUnlocking) {
       if (_canMakeCounterDeposit()) {
         buttons.add(_getDepositButtonViewModel(token));
         buttons.add(_getUnlockButtonViewModel(token));

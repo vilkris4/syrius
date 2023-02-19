@@ -83,7 +83,6 @@ class SecretSuffixClipboardWidget extends RawMaterialButton {
           onPressed: onPressed,
           constraints: const BoxConstraints(
             minWidth: 40.0,
-            minHeight: 0.0,
           ),
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         );

@@ -31,6 +31,9 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
   List<HtlcInfo> _cachedSwaps = [];
   List<HtlcInfo> get cachedSwaps => _cachedSwaps;
 
+  List<Hash> _autoUnlockedSwaps = [];
+  List<Hash> get autoUnlockedSwaps => _autoUnlockedSwaps;
+
   final StreamController _controller = StreamController.broadcast();
   StreamController get controller => _controller;
 
@@ -215,6 +218,10 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
         }
       }
     }
+
+    if (_autoUnlockedSwaps.isNotEmpty) {
+      _autoUnlockedSwaps.remove(hashId);
+    }
   }
 
   //TODO: encrypt preimage before saving
@@ -387,6 +394,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
             if (_status.entries.first.key != 'UnlockHtlc' &&
                 _status.entries.first.key != 'ReclaimHtlc' &&
                 !_isExpired) {
+              _autoUnlockedSwaps.add(_lockedSwap.id);
               UnlockHtlcBloc().unlockHtlc(
                 id: _lockedSwap.id,
                 preimage: hex.encode(unlockedHashlock),
@@ -394,6 +402,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
               );
             }
           } else if (!_isExpired) {
+            _autoUnlockedSwaps.add(_lockedSwap.id);
             UnlockHtlcBloc().unlockHtlc(
               id: _lockedSwap.id,
               preimage: hex.encode(unlockedHashlock),
