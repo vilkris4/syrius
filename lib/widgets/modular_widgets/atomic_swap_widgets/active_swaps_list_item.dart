@@ -1,5 +1,4 @@
 // TODO: Hide expired GetByID swaps?? Confirm with Vilkris
-// TODO: display when a swap is being auto-unlocked
 
 import 'dart:async';
 import 'dart:convert';
@@ -8,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:hive/hive.dart';
 import 'package:stacked/stacked.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/active_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/active_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/htlc/create_htlc_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/htlc/reclaim_htlc_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/htlc/unlock_htlc_bloc.dart';

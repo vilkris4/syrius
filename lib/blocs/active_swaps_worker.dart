@@ -1,5 +1,5 @@
-// TODO:remove unnecessary functions
-// Fix box data
+// TODO: simplify this class
+// encrypt pre-images
 // Fix scenario where incomplete pending swaps are not saved to box
 // Save checkpoint
 // box.add => Something like Map<String, String> item = {'htlcInfo': json, 'preimage': preimage};
@@ -74,37 +74,37 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
 
   // check all account blocks for the htlc contract from _startingHeight until now
   // then set _lastCheckedContractHeight to the last contract height checked
-  Future<void> _parseHtlcContractBlocks(int _startingHeight) async {
-    AccountBlock _frontierContractBlock =
+  Future<void> _parseHtlcContractBlocks(int startingHeight) async {
+    AccountBlock frontierContractBlock =
         (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!;
-    int _delta = _frontierContractBlock.height - _startingHeight + 1;
-    AccountBlockList _contractBlocks = await zenon!.ledger
-        .getAccountBlocksByHeight(htlcAddress, _startingHeight, _delta);
+    int delta = frontierContractBlock.height - startingHeight + 1;
+    AccountBlockList contractBlocks = await zenon!.ledger
+        .getAccountBlocksByHeight(htlcAddress, startingHeight, delta);
 
-    for (var block in _contractBlocks.list!) {
+    for (var block in contractBlocks.list!) {
       if (block.blockType == BlockTypeEnum.contractReceive.index) {
-        AccountBlock _block = block.pairedAccountBlock!;
+        AccountBlock innerBlock = block.pairedAccountBlock!;
 
-        if (_block.blockType == BlockTypeEnum.userSend.index) {
+        if (innerBlock.blockType == BlockTypeEnum.userSend.index) {
           Function eq = const ListEquality().equals;
           late AbiFunction f;
           try {
             for (var entry in Definitions.htlc.entries) {
               if (eq(AbiFunction.extractSignature(entry.encodeSignature()),
-                  AbiFunction.extractSignature(_block.data))) {
+                  AbiFunction.extractSignature(innerBlock.data))) {
                 f = AbiFunction(entry.name!, entry.inputs!);
               }
             }
             if (f.name.toString() == 'CreateHtlc') {
-              var data = f.decode(_block.data);
+              var data = f.decode(innerBlock.data);
 
-              if (kDefaultAddressList.contains(_block.address.toString()) ||
+              if (kDefaultAddressList.contains(innerBlock.address.toString()) ||
                   kDefaultAddressList.contains(data[0].toString())) {
-                final json = '{"id": "${_block.hash}",'
-                    '"timeLocked": "${_block.address}",'
+                final json = '{"id": "${innerBlock.hash}",'
+                    '"timeLocked": "${innerBlock.address}",'
                     '"hashLocked": "${data[0]}",'
-                    '"tokenStandard": "${_block.tokenStandard}",'
-                    '"amount": ${_block.amount},'
+                    '"tokenStandard": "${innerBlock.tokenStandard}",'
+                    '"amount": ${innerBlock.amount},'
                     '"expirationTime": ${data[1]},'
                     '"hashType": ${data[2]},'
                     '"keyMaxSize": ${data[3]},'
@@ -116,7 +116,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
                 }
               }
             } else if (f.name.toString() == 'UnlockHtlc') {
-              var args = f.decode(_block.data);
+              var args = f.decode(innerBlock.data);
               final Hash hashId = args[0];
               final List<int> preimage = args[1];
 
@@ -127,14 +127,14 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
               }
               await removeSwap(hashId);
             } else if (f.name.toString() == 'ReclaimHtlc') {
-              var args = f.decode(_block.data);
+              var args = f.decode(innerBlock.data);
               final Hash hashId = args[0];
               await removeSwap(hashId);
             }
           } catch (e) {
             //_sendErrorNotification(
             //todo: log this error but don't send a notification
-            print('1 Failed to parse block ${_block.hash}: $e');
+            print('1 Failed to parse block ${innerBlock.hash}: $e');
           }
         }
       }
@@ -163,8 +163,8 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
     int count = 0;
     for (var i = 0; i < createdSwapsList.length; i++) {
       createdSwapsList[i].forEach((htlc, preimage) {
-        HtlcInfo _pendingSwap = HtlcInfo.fromJson(jsonDecode(htlc));
-        if (_pendingSwap.id.toString() == '0' * 64) {
+        HtlcInfo pendingSwap = HtlcInfo.fromJson(jsonDecode(htlc));
+        if (pendingSwap.id.toString() == '0' * 64) {
           count++;
         }
       });
@@ -196,10 +196,10 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
       List _createdSwapsList = createdSwapsList.toList();
       for (var i = 0; i < _createdSwapsList.length; i++) {
         _createdSwapsList[i].forEach((htlc, preimage) {
-          HtlcInfo _savedSwap = HtlcInfo.fromJson(jsonDecode(htlc));
-          if (_savedSwap.id == hashId) {
+          HtlcInfo savedSwap = HtlcInfo.fromJson(jsonDecode(htlc));
+          if (savedSwap.id == hashId) {
             print(
-                'removed ${_savedSwap.id.toString()} from createdSwapsList because it was unlocked, reclaimed, or expired');
+                'removed ${savedSwap.id.toString()} from createdSwapsList because it was unlocked, reclaimed, or expired');
             createdSwapsList.removeAt(i);
           }
         });
@@ -229,8 +229,8 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
     required String json,
     List<int>? preimage,
   }) async {
-    HtlcInfo _pendingCreatedSwap = HtlcInfo.fromJson(jsonDecode(json));
-    _cachedSwaps.add(_pendingCreatedSwap);
+    HtlcInfo pendingCreatedSwap = HtlcInfo.fromJson(jsonDecode(json));
+    _cachedSwaps.add(pendingCreatedSwap);
 
     String _preimage =
         (preimage != null) ? FormatUtils.encodeHexString(preimage) : '';
@@ -334,16 +334,16 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
   }
 
   Future<void> addCreatedSwap(HtlcInfo _createdSwap) async {
-    bool _alreadyCached = false;
+    bool alreadyCached = false;
 
-    for (HtlcInfo _cachedSwap in _cachedSwaps) {
-      if (_cachedSwap.id == _createdSwap.id) {
-        _alreadyCached = true;
+    for (HtlcInfo cachedSwap in _cachedSwaps) {
+      if (cachedSwap.id == _createdSwap.id) {
+        alreadyCached = true;
         break;
       }
     }
 
-    if (!_alreadyCached) {
+    if (!alreadyCached) {
       _cachedSwaps.add(_createdSwap);
       _controller.add(_cachedSwaps);
 
@@ -377,36 +377,36 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
 
   Future<void> autoUnlock(unlockedHashlock) async {
     Function eq = const ListEquality().equals;
-    List<int> _unlockedSha3 = Hash.digest(unlockedHashlock).getBytes()!;
-    List<int> _unlockedSha256 = await Crypto.sha256Bytes(unlockedHashlock);
+    List<int> unlockedSha3 = Hash.digest(unlockedHashlock).getBytes()!;
+    List<int> unlockedSha256 = await Crypto.sha256Bytes(unlockedHashlock);
 
-    for (HtlcInfo _lockedSwap in _cachedSwaps) {
-      if (kDefaultAddressList.contains(_lockedSwap.hashLocked.toString())) {
-        if (eq(_lockedSwap.hashLock, _unlockedSha3) ||
-            eq(_lockedSwap.hashLock, _unlockedSha256)) {
-          bool _isExpired = _lockedSwap.expirationTime <
+    for (HtlcInfo lockedSwap in _cachedSwaps) {
+      if (kDefaultAddressList.contains(lockedSwap.hashLocked.toString())) {
+        if (eq(lockedSwap.hashLock, unlockedSha3) ||
+            eq(lockedSwap.hashLock, unlockedSha256)) {
+          bool _isExpired = lockedSwap.expirationTime <
               ((DateTime.now().millisecondsSinceEpoch) / 1000).floor();
 
           Map _status = await sl
               .get<ActiveSwapsWorker>()
-              .evaluateSwapStatus(_lockedSwap.id);
+              .evaluateSwapStatus(lockedSwap.id);
           if (_status.isNotEmpty) {
             if (_status.entries.first.key != 'UnlockHtlc' &&
                 _status.entries.first.key != 'ReclaimHtlc' &&
                 !_isExpired) {
-              _autoUnlockedSwaps.add(_lockedSwap.id);
+              _autoUnlockedSwaps.add(lockedSwap.id);
               UnlockHtlcBloc().unlockHtlc(
-                id: _lockedSwap.id,
+                id: lockedSwap.id,
                 preimage: hex.encode(unlockedHashlock),
-                hashLocked: _lockedSwap.hashLocked,
+                hashLocked: lockedSwap.hashLocked,
               );
             }
           } else if (!_isExpired) {
-            _autoUnlockedSwaps.add(_lockedSwap.id);
+            _autoUnlockedSwaps.add(lockedSwap.id);
             UnlockHtlcBloc().unlockHtlc(
-              id: _lockedSwap.id,
+              id: lockedSwap.id,
               preimage: hex.encode(unlockedHashlock),
-              hashLocked: _lockedSwap.hashLocked,
+              hashLocked: lockedSwap.hashLocked,
             );
           }
         }
@@ -417,38 +417,38 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
   // check all account blocks for the htlc contract from _startingHeight until now
   // then set _lastCheckedContractHeight to the last contract height checked
   Future<Map> evaluateSwapStatus(Hash hashId) async {
-    int _startingHeight = ((await zenon!.ledger.getAccountBlockByHash(hashId))
+    int startingHeight = ((await zenon!.ledger.getAccountBlockByHash(hashId))
         ?.pairedAccountBlock
         ?.height)!;
 
-    AccountBlock _frontierContractBlock =
+    AccountBlock frontierContractBlock =
         (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!;
-    int _delta = _frontierContractBlock.height - _startingHeight + 1;
-    AccountBlockList _contractBlocks = await zenon!.ledger
-        .getAccountBlocksByHeight(htlcAddress, _startingHeight, _delta);
+    int _delta = frontierContractBlock.height - startingHeight + 1;
+    AccountBlockList contractBlocks = await zenon!.ledger
+        .getAccountBlocksByHeight(htlcAddress, startingHeight, _delta);
 
-    for (var block in _contractBlocks.list!) {
+    for (var block in contractBlocks.list!) {
       if (block.blockType == BlockTypeEnum.contractReceive.index) {
-        AccountBlock _block = block.pairedAccountBlock!;
-        if (_block.blockType == BlockTypeEnum.userSend.index) {
+        AccountBlock innerBlock = block.pairedAccountBlock!;
+        if (innerBlock.blockType == BlockTypeEnum.userSend.index) {
           Function eq = const ListEquality().equals;
           late AbiFunction f;
           try {
             for (var entry in Definitions.htlc.entries) {
               if (eq(AbiFunction.extractSignature(entry.encodeSignature()),
-                  AbiFunction.extractSignature(_block.data))) {
+                  AbiFunction.extractSignature(innerBlock.data))) {
                 f = AbiFunction(entry.name!, entry.inputs!);
               }
             }
             if (f.name.toString() == 'UnlockHtlc') {
-              var args = f.decode(_block.data);
+              var args = f.decode(innerBlock.data);
               final Hash htlcId = args[0];
               final preimage = hex.encode(args[1]);
               if (htlcId == hashId) {
                 return {f.name.toString(): preimage};
               }
             } else if (f.name.toString() == 'ReclaimHtlc') {
-              var args = f.decode(_block.data);
+              var args = f.decode(innerBlock.data);
               final Hash hashId = args[0];
               if (hashId == hashId) {
                 return {f.name.toString(): ''};
@@ -456,7 +456,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
             }
           } catch (e) {
             _sendErrorNotification(
-                'evaluateSwapStatus: Failed to parse block ${_block.hash}: $e');
+                'evaluateSwapStatus: Failed to parse block ${innerBlock.hash}: $e');
           }
         }
       }
@@ -533,10 +533,10 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
     return earliestContractHeight;
   }
 
-  Future<void> _saveLastCheckedHeightValueToCache(int _height) async {
+  Future<void> _saveLastCheckedHeightValueToCache(int height) async {
     //await sharedPrefsService!.put(
     //   kHtlcLastCheckedHeightKey,
-    //   _height,
+    //   height,
     //  );
   }
 

@@ -1,7 +1,9 @@
-//TODO: a 'scan' for secret suffix
+//TODO: a cancel a 'scan for secret' future
 
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'package:zenon_syrius_wallet_flutter/main.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/active_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/address_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/clipboard_utils.dart';
@@ -10,6 +12,7 @@ import 'package:zenon_syrius_wallet_flutter/utils/format_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/input_validators.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/info_item_widget.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/loading_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/input_field.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/scan_secret_suffix_widgets.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs/swap_dialogs/dialog_info_item_widget.dart';
@@ -31,6 +34,9 @@ showUnlockDialog({
       (await InputValidators.checkSecret(htlc, controller.text) == null)
           ? true
           : false;
+
+  bool scanning = false;
+  bool? secretFound;
 
   showDialog(
       context: context,
@@ -136,111 +142,152 @@ showUnlockDialog({
                                   null)
                               ? true
                               : false;
-                          // setState(() {});
                         },
                         validator: (value) =>
                             (valid == true) ? null : 'Invalid secret',
                         controller: controller,
                         contentLeftPadding: 20.0,
                         suffixIcon: (!valid)
-                            ? ScanSecretSuffixWidgets(
-                                onScanPressed: () {},
-                                onClipboardPressed: () {
-                                  ClipboardUtils.pasteToClipboard(context,
-                                      (String _value) async {
-                                    controller.text = '';
-                                    controller.text = _value;
-                                    valid = (await InputValidators.checkSecret(
-                                                htlc, controller.text) ==
-                                            null)
-                                        ? true
-                                        : false;
-                                  });
-                                },
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  (!scanning && secretFound == null)
+                                      ? SecretSuffixScanWidget(
+                                          onPressed: () async {
+                                          setState(() {
+                                            scanning = true;
+                                          });
+                                          String _preimage = await sl
+                                              .get<ActiveSwapsWorker>()
+                                              .scanForSecret(htlc.id);
+                                          try {
+                                            setState(() {
+                                              if (_preimage.isEmpty) {
+                                                secretFound = false;
+                                                scanning = false;
+                                              } else {
+                                                preimage = _preimage;
+                                                controller.text = preimage!;
+                                                secretFound = true;
+                                                scanning = false;
+                                              }
+                                            });
+                                          } catch (e) {
+                                            //TODO: handle error when Navigator pop() during scan
+                                            print(e);
+                                          }
+                                          valid = (await InputValidators
+                                                      .checkSecret(htlc,
+                                                          controller.text) ==
+                                                  null)
+                                              ? true
+                                              : false;
+                                        })
+                                      : Container(),
+                                  SecretSuffixClipboardWidget(
+                                    onPressed: () => {
+                                      ClipboardUtils.pasteToClipboard(context,
+                                          (String _value) async {
+                                        controller.text = '';
+                                        controller.text = _value;
+                                        valid =
+                                            (await InputValidators.checkSecret(
+                                                        htlc,
+                                                        controller.text) ==
+                                                    null)
+                                                ? true
+                                                : false;
+                                      }),
+                                    },
+                                  ),
+                                  const SizedBox(
+                                    width: 10.0,
+                                  ),
+                                ],
                               )
                             : const SizedBox(
-                                width: 15.0,
+                                width: 20.0,
                               ),
                         suffixIconConstraints: const BoxConstraints(),
                         hintText: 'Secret',
                       ),
                     ),
-                    /*
-                    Form(
-                      key: key,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      child: InputField(
-                        onChanged: (value) async {
-                          valid = (await InputValidators.checkSecret(
-                                      htlc, controller.text) ==
-                                  null)
-                              ? true
-                              : false;
-                        },
-                        validator: (value) =>
-                            (valid == true) ? null : 'Invalid secret',
-                        controller: controller,
-                        suffixIcon: ScanSecretSuffixWidgets(
-                          onScanPressed: () {
-                            /*
-                            num maxZnn = accountInfo.getBalanceWithDecimals(
-                              kZnnCoin.tokenStandard,
-                            );
-                            if (_znnAmountController.text.isEmpty ||
-                                _znnAmountController.text.toNum() < maxZnn) {
-                              setState(() {
-                                _znnAmountController.text = maxZnn.toString();
-                              });
-                            }
-
-                             */
-                          },
-                          onClipboardPressed: () {
-                            ClipboardUtils.pasteToClipboard(context,
-                                (String _value) async {
-                              controller.text = '';
-                              controller.text = _value;
-                              valid = (await InputValidators.checkSecret(
-                                          htlc, controller.text) ==
-                                      null)
-                                  ? true
-                                  : false;
-                            });
-                          },
-                        ),
-
-                        //_getSecretSuffix(),
-                        /*
-                  RawMaterialButton(
-                    child: const Icon(
-                      Icons.content_paste,
-                      color: AppColors.darkHintTextColor,
-                      size: 15.0,
-                    ),
-                    shape: const CircleBorder(),
-                    onPressed: () {
-                      ClipboardUtils.pasteToClipboard(context,
-                          (String _value) async {
-                        controller.text = '';
-                        controller.text = _value;
-                        valid = (await InputValidators.checkSecret(
-                                    htlc, controller.text) ==
-                                null)
-                            ? true
-                            : false;
-                      });
-                    },
-                  ),
-                   */
-                        suffixIconConstraints: const BoxConstraints(
-                          maxWidth: 45.0,
-                          maxHeight: 20.0,
-                        ),
-                        hintText: 'Secret',
-                      ),
-                    ),
-                    */
-                    kVerticalSpacing,
+                    Visibility(
+                        visible: scanning || secretFound != null,
+                        child: Flexible(
+                            child: Row(
+                          children: [
+                            Visibility(
+                                visible: scanning,
+                                child: Flexible(
+                                    child: Row(children: [
+                                  const SizedBox(
+                                    width: 20.0,
+                                    height: 50.0,
+                                  ),
+                                  const SyriusLoadingWidget(
+                                    size: 12.0,
+                                    strokeWidth: 1.0,
+                                  ),
+                                  const SizedBox(
+                                    width: 10.0,
+                                  ),
+                                  Text(
+                                    'Scanning for secrets...',
+                                    style:
+                                        Theme.of(context).textTheme.bodyText1,
+                                  ),
+                                  const Spacer(),
+                                  SecretCancelScanWidget(onPressed: () {}),
+                                ]))),
+                            Visibility(
+                                visible: secretFound == true,
+                                child: Row(children: [
+                                  const SizedBox(
+                                    width: 20.0,
+                                    height: 50.0,
+                                  ),
+                                  const Icon(
+                                    AntDesign.checkcircleo,
+                                    size: 12.0,
+                                    color: Colors.green,
+                                  ),
+                                  const SizedBox(
+                                    width: 10.0,
+                                  ),
+                                  Text(
+                                    'Secret found',
+                                    style:
+                                        Theme.of(context).textTheme.bodyText1,
+                                  ),
+                                ])),
+                            Visibility(
+                                visible: secretFound == false,
+                                child: Row(children: [
+                                  const SizedBox(
+                                    width: 20.0,
+                                    height: 50.0,
+                                  ),
+                                  const Icon(
+                                    AntDesign.closecircleo,
+                                    size: 12.0,
+                                    color: Colors.red,
+                                  ),
+                                  const SizedBox(
+                                    width: 10.0,
+                                  ),
+                                  Text(
+                                    'Secret not published yet',
+                                    style:
+                                        Theme.of(context).textTheme.bodyText1,
+                                  ),
+                                ])),
+                          ],
+                        ))),
+                    (!scanning && secretFound == null)
+                        ? kVerticalSpacing
+                        : Container(),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
