@@ -1,4 +1,4 @@
-//TODO: a cancel a 'scan for secret' future
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
@@ -29,6 +29,8 @@ showUnlockDialog({
   required Key? key,
   String? preimage,
 }) async {
+  GlobalKey<State<StatefulBuilder>> builderKey = GlobalKey();
+
   controller.text = preimage!;
   bool valid =
       (await InputValidators.checkSecret(htlc, controller.text) == null)
@@ -38,421 +40,446 @@ showUnlockDialog({
   bool scanning = false;
   bool? secretFound;
 
+  StreamSubscription<String>? searchSecretStream;
+
   showDialog(
       context: context,
       builder: (context) {
-        return StatefulBuilder(builder: (context, setState) {
-          return AlertDialog(
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 10.0,
-              horizontal: 30.0,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.0),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-            content: SizedBox(
-                width: 495,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    kVerticalSpacing,
-                    Row(
+        return StatefulBuilder(
+            key: builderKey,
+            builder: (context, setState) {
+              return AlertDialog(
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 10.0,
+                  horizontal: 30.0,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.0),
+                ),
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                content: SizedBox(
+                    width: 495,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        const SizedBox(
-                          width: 5.0,
+                        kVerticalSpacing,
+                        Row(
+                          children: [
+                            const SizedBox(
+                              width: 5.0,
+                            ),
+                            Text(
+                              title,
+                              style: Theme.of(context).textTheme.headline5,
+                            ),
+                            const Spacer(),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                foregroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .inverseSurface,
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer,
+                                minimumSize: Size.zero,
+                                padding: EdgeInsets.zero,
+                              ),
+                              child: const Icon(
+                                Feather.x,
+                                color: AppColors.lightSecondary,
+                                size: 25.0,
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          title,
-                          style: Theme.of(context).textTheme.headline5,
+                        kVerticalSpacing,
+                        Row(
+                          children: [
+                            InfoItemWidget(
+                              label: 'Deposit ID',
+                              value: htlc.id.toString(),
+                            ),
+                            const SizedBox(
+                              width: 15.0,
+                            ),
+                            InfoItemWidget(
+                              label: 'Sender',
+                              value: htlc.timeLocked.toString(),
+                            ),
+                          ],
                         ),
-                        const Spacer(),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor:
-                                Theme.of(context).colorScheme.inverseSurface,
-                            backgroundColor:
-                                Theme.of(context).colorScheme.primaryContainer,
-                            minimumSize: Size.zero,
-                            padding: EdgeInsets.zero,
+                        kVerticalSpacing,
+                        DialogInfoItemWidget(
+                          id: 'Locked amount',
+                          value: FormatUtils.formatAtomicSwapAmount(
+                              htlc.amount, token),
+                          address:
+                              Address.parse(token.tokenStandard.toString()),
+                          token: token,
+                        ),
+                        kVerticalSpacing,
+                        Align(
+                          alignment: Alignment.center,
+                          child: Icon(
+                            AntDesign.arrowdown,
+                            color: Theme.of(context).colorScheme.inverseSurface,
+                            size: 25,
                           ),
-                          child: const Icon(
-                            Feather.x,
-                            color: AppColors.lightSecondary,
-                            size: 25.0,
-                          ),
                         ),
-                      ],
-                    ),
-                    kVerticalSpacing,
-                    Row(
-                      children: [
-                        InfoItemWidget(
-                          label: 'Deposit ID',
-                          value: htlc.id.toString(),
+                        kVerticalSpacing,
+                        DialogInfoItemWidget(
+                          id: 'Recipient',
+                          value: (kDefaultAddressList
+                                  .contains(htlc.hashLocked.toString()))
+                              ? AddressUtils.getLabel(
+                                  htlc.hashLocked.toString())
+                              : FormatUtils.formatLongString(
+                                  htlc.hashLocked.toString()),
+                          address: htlc.hashLocked,
+                          token: token,
                         ),
-                        const SizedBox(
-                          width: 15.0,
-                        ),
-                        InfoItemWidget(
-                          label: 'Sender',
-                          value: htlc.timeLocked.toString(),
-                        ),
-                      ],
-                    ),
-                    kVerticalSpacing,
-                    DialogInfoItemWidget(
-                      id: 'Locked amount',
-                      value: FormatUtils.formatAtomicSwapAmount(
-                          htlc.amount, token),
-                      address: Address.parse(token.tokenStandard.toString()),
-                      token: token,
-                    ),
-                    kVerticalSpacing,
-                    Align(
-                      alignment: Alignment.center,
-                      child: Icon(
-                        AntDesign.arrowdown,
-                        color: Theme.of(context).colorScheme.inverseSurface,
-                        size: 25,
-                      ),
-                    ),
-                    kVerticalSpacing,
-                    DialogInfoItemWidget(
-                      id: 'Recipient',
-                      value: (kDefaultAddressList
-                              .contains(htlc.hashLocked.toString()))
-                          ? AddressUtils.getLabel(htlc.hashLocked.toString())
-                          : FormatUtils.formatLongString(
-                              htlc.hashLocked.toString()),
-                      address: htlc.hashLocked,
-                      token: token,
-                    ),
-                    kVerticalSpacing,
-                    Form(
-                      key: key,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      child: InputField(
-                        onChanged: (value) async {
-                          valid = (await InputValidators.checkSecret(
-                                      htlc, controller.text) ==
-                                  null)
-                              ? true
-                              : false;
-                        },
-                        validator: (value) =>
-                            (valid == true) ? null : 'Invalid secret',
-                        controller: controller,
-                        contentLeftPadding: 20.0,
-                        suffixIcon: (!valid)
-                            ? Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  (!scanning && secretFound == null)
-                                      ? SecretSuffixScanWidget(
-                                          onPressed: () async {
-                                          setState(() {
-                                            scanning = true;
-                                          });
-                                          String _preimage = await sl
-                                              .get<ActiveSwapsWorker>()
-                                              .scanForSecret(htlc.id);
-                                          try {
-                                            setState(() {
-                                              if (_preimage.isEmpty) {
-                                                secretFound = false;
-                                                scanning = false;
-                                              } else {
-                                                preimage = _preimage;
-                                                controller.text = preimage!;
-                                                secretFound = true;
-                                                scanning = false;
-                                              }
-                                            });
-                                          } catch (e) {
-                                            //TODO: handle error when Navigator pop() during scan
-                                            print(e);
-                                          }
-                                          valid = (await InputValidators
-                                                      .checkSecret(htlc,
-                                                          controller.text) ==
-                                                  null)
-                                              ? true
-                                              : false;
-                                        })
-                                      : Container(),
-                                  SecretSuffixClipboardWidget(
-                                    onPressed: () => {
-                                      ClipboardUtils.pasteToClipboard(context,
-                                          (String _value) async {
-                                        controller.text = '';
-                                        controller.text = _value;
-                                        valid =
-                                            (await InputValidators.checkSecret(
-                                                        htlc,
-                                                        controller.text) ==
+                        kVerticalSpacing,
+                        Form(
+                          key: key,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          child: InputField(
+                            onChanged: (value) async {
+                              valid = (await InputValidators.checkSecret(
+                                          htlc, controller.text) ==
+                                      null)
+                                  ? true
+                                  : false;
+                            },
+                            validator: (value) =>
+                                (valid == true) ? null : 'Invalid secret',
+                            controller: controller,
+                            contentLeftPadding: 20.0,
+                            suffixIcon: (!valid)
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      (!scanning && secretFound == null)
+                                          ? SecretSuffixScanWidget(
+                                              onPressed: () async {
+                                              setState(() {
+                                                scanning = true;
+                                              });
+                                              searchSecretStream = sl
+                                                  .get<ActiveSwapsWorker>()
+                                                  .scanForSecret(htlc.id)
+                                                  .asStream()
+                                                  .listen(
+                                                (value) {
+                                                  if (builderKey.currentState
+                                                          ?.mounted !=
+                                                      null) {
+                                                    setState(() {
+                                                      preimage = value;
+                                                      if (preimage!.isEmpty) {
+                                                        secretFound = false;
+                                                        scanning = false;
+                                                      } else {
+                                                        controller.text =
+                                                            preimage!;
+                                                        secretFound = true;
+                                                        scanning = false;
+                                                      }
+                                                    });
+                                                  }
+                                                },
+                                              );
+                                              valid = (await InputValidators
+                                                          .checkSecret(
+                                                              htlc,
+                                                              controller
+                                                                  .text) ==
+                                                      null)
+                                                  ? true
+                                                  : false;
+                                            })
+                                          : Container(),
+                                      SecretSuffixClipboardWidget(
+                                        onPressed: () => {
+                                          ClipboardUtils.pasteToClipboard(
+                                              context, (String _value) async {
+                                            controller.text = '';
+                                            controller.text = _value;
+                                            valid = (await InputValidators
+                                                        .checkSecret(htlc,
+                                                            controller.text) ==
                                                     null)
                                                 ? true
                                                 : false;
-                                      }),
-                                    },
-                                  ),
-                                  const SizedBox(
-                                    width: 10.0,
-                                  ),
-                                ],
-                              )
-                            : const SizedBox(
-                                width: 20.0,
-                              ),
-                        suffixIconConstraints: const BoxConstraints(),
-                        hintText: 'Secret',
-                      ),
-                    ),
-                    Visibility(
-                        visible: scanning || secretFound != null,
-                        child: Flexible(
-                            child: Row(
-                          children: [
-                            Visibility(
-                                visible: scanning,
-                                child: Flexible(
-                                    child: Row(children: [
-                                  const SizedBox(
+                                          }),
+                                        },
+                                      ),
+                                      const SizedBox(
+                                        width: 10.0,
+                                      ),
+                                    ],
+                                  )
+                                : const SizedBox(
                                     width: 20.0,
-                                    height: 50.0,
                                   ),
-                                  const SyriusLoadingWidget(
-                                    size: 12.0,
-                                    strokeWidth: 1.0,
-                                  ),
-                                  const SizedBox(
-                                    width: 10.0,
-                                  ),
-                                  Text(
-                                    'Scanning for secrets...',
-                                    style:
-                                        Theme.of(context).textTheme.bodyText1,
-                                  ),
-                                  const Spacer(),
-                                  SecretCancelScanWidget(onPressed: () {}),
-                                ]))),
-                            Visibility(
-                                visible: secretFound == true,
-                                child: Row(children: [
-                                  const SizedBox(
-                                    width: 20.0,
-                                    height: 50.0,
-                                  ),
-                                  const Icon(
-                                    AntDesign.checkcircleo,
-                                    size: 12.0,
-                                    color: Colors.green,
-                                  ),
-                                  const SizedBox(
-                                    width: 10.0,
-                                  ),
-                                  Text(
-                                    'Secret found',
-                                    style:
-                                        Theme.of(context).textTheme.bodyText1,
-                                  ),
-                                ])),
-                            Visibility(
-                                visible: secretFound == false,
-                                child: Row(children: [
-                                  const SizedBox(
-                                    width: 20.0,
-                                    height: 50.0,
-                                  ),
-                                  const Icon(
-                                    AntDesign.closecircleo,
-                                    size: 12.0,
-                                    color: Colors.red,
-                                  ),
-                                  const SizedBox(
-                                    width: 10.0,
-                                  ),
-                                  Text(
-                                    'Secret not published yet',
-                                    style:
-                                        Theme.of(context).textTheme.bodyText1,
-                                  ),
-                                ])),
-                          ],
-                        ))),
-                    (!scanning && secretFound == null)
-                        ? kVerticalSpacing
-                        : Container(),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextButton(
-                          child: Text(
-                            title,
-                            style: Theme.of(context).textTheme.bodyText1,
-                          ),
-                          onPressed: () async {
-                            valid = (await InputValidators.checkSecret(
-                                        htlc, controller.text) ==
-                                    null)
-                                ? true
-                                : false;
-                            if (valid == true) {
-                              onUnlockButtonPressed();
-                            } else {
-                              if (controller.text.isEmpty) {
-                                controller.text = ' ';
-                                controller.text = '';
-                              }
-                            }
-                          },
-                          style: TextButton.styleFrom(
-                            backgroundColor: AppColors.znnColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(4.0),
-                            ),
+                            suffixIconConstraints: const BoxConstraints(),
+                            hintText: 'Secret',
                           ),
                         ),
-                      ],
-                    ),
-                    kVerticalSpacing,
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20.0,
-                        vertical: 25.0,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(
-                          8.0,
-                        ),
-                        color: Theme.of(context).dividerTheme.color,
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Column(children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 10.0),
-                                  child: Text(
-                                    '●',
-                                    style:
-                                        Theme.of(context).textTheme.subtitle1,
-                                  ),
+                        Visibility(
+                            visible: scanning || secretFound != null,
+                            child: Flexible(
+                                child: Row(
+                              children: [
+                                const SizedBox(
+                                  width: 20.0,
+                                  height: 50.0,
                                 ),
-                              ]),
-                              Flexible(
-                                child: Column(children: [
-                                  Row(children: [
-                                    Flexible(
-                                      child: RichText(
-                                        text: TextSpan(
-                                          text: 'You will receive ',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .subtitle1,
-                                          children: [
-                                            TextSpan(
-                                              text:
-                                                  '${FormatUtils.formatAtomicSwapAmount(htlc.amount, token)} ${token.symbol} ',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyText2,
-                                            ),
-                                            TextSpan(
-                                              text: 'into ',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .subtitle1,
-                                            ),
-                                            TextSpan(
-                                              text: (kDefaultAddressList
-                                                      .contains(htlc.hashLocked
-                                                          .toString()))
-                                                  ? AddressUtils.getLabel(htlc
-                                                      .hashLocked
-                                                      .toString())
-                                                  : FormatUtils
-                                                      .formatLongString(htlc
-                                                          .hashLocked
-                                                          .toString()),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyText2,
-                                            ),
-                                            TextSpan(
-                                              text: '.',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .subtitle1,
-                                            ),
-                                          ],
-                                        ),
-                                        maxLines: 3,
-                                        softWrap: true,
+                                Visibility(
+                                    visible: scanning,
+                                    child: Flexible(
+                                        child: Row(children: [
+                                      const SyriusLoadingWidget(
+                                        size: 12.0,
+                                        strokeWidth: 1.0,
+                                      ),
+                                      const SizedBox(
+                                        width: 10.0,
+                                      ),
+                                      Text(
+                                        'Scanning for secrets...',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText1,
+                                      ),
+                                      const Spacer(),
+                                      SecretCancelScanWidget(onPressed: () {
+                                        searchSecretStream?.cancel();
+                                        if (builderKey.currentState?.mounted !=
+                                            null) {
+                                          setState(
+                                            () {
+                                              scanning = false;
+                                            },
+                                          );
+                                        }
+                                      }),
+                                    ]))),
+                                Visibility(
+                                    visible: secretFound == true,
+                                    child: Row(children: [
+                                      const Icon(
+                                        AntDesign.checkcircleo,
+                                        size: 12.0,
+                                        color: Colors.green,
+                                      ),
+                                      const SizedBox(
+                                        width: 10.0,
+                                      ),
+                                      Text(
+                                        'Secret found',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText1,
+                                      ),
+                                    ])),
+                                Visibility(
+                                    visible: secretFound == false,
+                                    child: Row(children: [
+                                      const Icon(
+                                        AntDesign.closecircleo,
+                                        size: 12.0,
+                                        color: Colors.red,
+                                      ),
+                                      const SizedBox(
+                                        width: 10.0,
+                                      ),
+                                      Text(
+                                        'Secret not published yet',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText1,
+                                      ),
+                                    ])),
+                              ],
+                            ))),
+                        (!scanning && secretFound == null)
+                            ? kVerticalSpacing
+                            : Container(),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            TextButton(
+                              child: Text(
+                                title,
+                                style: Theme.of(context).textTheme.bodyText1,
+                              ),
+                              onPressed: () async {
+                                valid = (await InputValidators.checkSecret(
+                                            htlc, controller.text) ==
+                                        null)
+                                    ? true
+                                    : false;
+                                if (valid == true) {
+                                  onUnlockButtonPressed();
+                                } else {
+                                  if (controller.text.isEmpty) {
+                                    controller.text = ' ';
+                                    controller.text = '';
+                                  }
+                                }
+                              },
+                              style: TextButton.styleFrom(
+                                backgroundColor: AppColors.znnColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4.0),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        kVerticalSpacing,
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20.0,
+                            vertical: 25.0,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(
+                              8.0,
+                            ),
+                            color: Theme.of(context).dividerTheme.color,
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Column(children: [
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.only(right: 10.0),
+                                      child: Text(
+                                        '●',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .subtitle1,
                                       ),
                                     ),
-                                  ])
-                                ]),
-                              ),
-                            ],
-                          ),
-                          kVerticalSpacing,
-                          Row(
-                            children: [
-                              Column(children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 10.0),
-                                  child: Text(
-                                    '●',
-                                    style:
-                                        Theme.of(context).textTheme.subtitle1,
-                                  ),
-                                ),
-                              ]),
-                              Flexible(
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      children: [
+                                  ]),
+                                  Flexible(
+                                    child: Column(children: [
+                                      Row(children: [
                                         Flexible(
-                                          child: Column(children: [
-                                            Row(
+                                          child: RichText(
+                                            text: TextSpan(
+                                              text: 'You will receive ',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .subtitle1,
                                               children: [
-                                                Flexible(
-                                                  child: RichText(
-                                                    text: TextSpan(
-                                                      text:
-                                                          'The secret will be published on-chain.',
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .subtitle1,
-                                                    ),
-                                                  ),
+                                                TextSpan(
+                                                  text:
+                                                      '${FormatUtils.formatAtomicSwapAmount(htlc.amount, token)} ${token.symbol} ',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2,
+                                                ),
+                                                TextSpan(
+                                                  text: 'into ',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .subtitle1,
+                                                ),
+                                                TextSpan(
+                                                  text: (kDefaultAddressList
+                                                          .contains(htlc
+                                                              .hashLocked
+                                                              .toString()))
+                                                      ? AddressUtils.getLabel(
+                                                          htlc.hashLocked
+                                                              .toString())
+                                                      : FormatUtils
+                                                          .formatLongString(htlc
+                                                              .hashLocked
+                                                              .toString()),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2,
+                                                ),
+                                                TextSpan(
+                                                  text: '.',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .subtitle1,
                                                 ),
                                               ],
                                             ),
-                                          ]),
+                                            maxLines: 3,
+                                            softWrap: true,
+                                          ),
+                                        ),
+                                      ])
+                                    ]),
+                                  ),
+                                ],
+                              ),
+                              kVerticalSpacing,
+                              Row(
+                                children: [
+                                  Column(children: [
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.only(right: 10.0),
+                                      child: Text(
+                                        '●',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .subtitle1,
+                                      ),
+                                    ),
+                                  ]),
+                                  Flexible(
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Flexible(
+                                              child: Column(children: [
+                                                Row(
+                                                  children: [
+                                                    Flexible(
+                                                      child: RichText(
+                                                        text: TextSpan(
+                                                          text:
+                                                              'The secret will be published on-chain.',
+                                                          style:
+                                                              Theme.of(context)
+                                                                  .textTheme
+                                                                  .subtitle1,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ]),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
-                    kVerticalSpacing,
-                  ],
-                )),
-          );
-        });
+                        ),
+                        kVerticalSpacing,
+                      ],
+                    )),
+              );
+            });
       });
 }
