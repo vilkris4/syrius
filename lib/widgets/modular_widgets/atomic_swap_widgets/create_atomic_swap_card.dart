@@ -394,13 +394,13 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
 
     switch (lockDuration) {
       case '3 hours':
-        expirationTime = htlcTimelockUnitSec * 3;
+        expirationTime = kOneHourInSeconds * 3;
         break;
       case '24 hours':
-        expirationTime = htlcTimelockUnitSec * 24;
+        expirationTime = kOneHourInSeconds * 24;
         break;
       default:
-        expirationTime = htlcTimelockUnitSec * 12;
+        expirationTime = kOneHourInSeconds * 12;
     }
     _expirationTime = expirationTime + currentTime;
     return _expirationTime!;

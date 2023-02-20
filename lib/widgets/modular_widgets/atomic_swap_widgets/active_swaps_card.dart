@@ -314,7 +314,7 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
         if (eq(AbiFunction.extractSignature(entry.encodeSignature()),
             AbiFunction.extractSignature(_block.data))) {
           f = AbiFunction(entry.name!, entry.inputs!);
-          if (f.name == 'CreateHtlc') {
+          if (f.name == 'Create') {
             _retrieveHtlc = true;
             var data = f.decode(_block.data);
             final json = '{"id": "${_block.hash}",'

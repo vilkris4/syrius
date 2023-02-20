@@ -4,6 +4,7 @@
 // Save checkpoint
 // box.add => Something like Map<String, String> item = {'htlcInfo': json, 'preimage': preimage};
 // Don't save pending swaps when creation fails, must receive confirmation that the swap was created successfully
+// Call evaluateSwapStatus for getbyid?
 
 import 'dart:async';
 import 'dart:convert';
@@ -95,7 +96,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
                 f = AbiFunction(entry.name!, entry.inputs!);
               }
             }
-            if (f.name.toString() == 'CreateHtlc') {
+            if (f.name.toString() == 'Create') {
               var data = f.decode(innerBlock.data);
 
               if (kDefaultAddressList.contains(innerBlock.address.toString()) ||
@@ -115,7 +116,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
                   await addCreatedSwap(_createdHtlc);
                 }
               }
-            } else if (f.name.toString() == 'UnlockHtlc') {
+            } else if (f.name.toString() == 'Unlock') {
               var args = f.decode(innerBlock.data);
               final Hash hashId = args[0];
               final List<int> preimage = args[1];
@@ -126,7 +127,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
                 print('autoUnlock(preimage) failed: $e');
               }
               await removeSwap(hashId);
-            } else if (f.name.toString() == 'ReclaimHtlc') {
+            } else if (f.name.toString() == 'Reclaim') {
               var args = f.decode(innerBlock.data);
               final Hash hashId = args[0];
               await removeSwap(hashId);
@@ -249,6 +250,13 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
       kHtlcCreatedSwapsKey,
       createdSwapsList,
     );
+  }
+
+  Future<bool> _confirmPendingSwap(Hash id) async {
+    bool confirmed = false;
+    while (!confirmed) {
+      await Future.delayed(Duration(seconds: 2));
+    }
   }
 
   Future<bool> updatePendingSwaps(HtlcInfo _discoveredSwap) async {
@@ -391,8 +399,8 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
               .get<ActiveSwapsWorker>()
               .evaluateSwapStatus(lockedSwap.id);
           if (_status.isNotEmpty) {
-            if (_status.entries.first.key != 'UnlockHtlc' &&
-                _status.entries.first.key != 'ReclaimHtlc' &&
+            if (_status.entries.first.key != 'Unlock' &&
+                _status.entries.first.key != 'Reclaim' &&
                 !_isExpired) {
               _autoUnlockedSwaps.add(lockedSwap.id);
               UnlockHtlcBloc().unlockHtlc(
@@ -440,14 +448,14 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
                 f = AbiFunction(entry.name!, entry.inputs!);
               }
             }
-            if (f.name.toString() == 'UnlockHtlc') {
+            if (f.name.toString() == 'Unlock') {
               var args = f.decode(innerBlock.data);
               final Hash htlcId = args[0];
               final preimage = hex.encode(args[1]);
               if (htlcId == hashId) {
                 return {f.name.toString(): preimage};
               }
-            } else if (f.name.toString() == 'ReclaimHtlc') {
+            } else if (f.name.toString() == 'Reclaim') {
               var args = f.decode(innerBlock.data);
               final Hash hashId = args[0];
               if (hashId == hashId) {
@@ -490,7 +498,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
                 f = AbiFunction(entry.name!, entry.inputs!);
               }
             }
-            if (f.name.toString() == 'UnlockHtlc') {
+            if (f.name.toString() == 'Unlock') {
               var args = f.decode(pairedBlock.data);
               final Hash htlcId = args[0];
               final preimage = hex.encode(args[1]);
