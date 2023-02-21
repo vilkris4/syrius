@@ -62,8 +62,8 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
     super.initState();
     _tokenFuture =
         zenon!.embedded.token.getByZts(widget.htlcInfo!.tokenStandard);
-    _proxyUnlockFuture = zenon!.embedded.htlc
-        .getHtlcProxyUnlockStatus(widget.htlcInfo!.hashLocked);
+    _proxyUnlockFuture =
+        zenon!.embedded.htlc.getProxyUnlockStatus(widget.htlcInfo!.hashLocked);
     _futures = Future.wait([_tokenFuture, _proxyUnlockFuture]);
 
     if (_isSwapInProgress()) {

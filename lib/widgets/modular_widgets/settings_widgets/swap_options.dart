@@ -1,28 +1,13 @@
-import 'dart:io';
-import 'dart:typed_data';
-
-import 'package:feedback/feedback.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:zenon_syrius_wallet_flutter/screens/reset_wallet_screen.dart';
-import 'package:zenon_syrius_wallet_flutter/screens/splash_screen.dart';
-import 'package:zenon_syrius_wallet_flutter/screens/swap/swap_info_screen.dart';
+import 'package:zenon_syrius_wallet_flutter/main.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/notifications_bloc.dart';
+import 'package:zenon_syrius_wallet_flutter/model/database/notification_type.dart';
+import 'package:zenon_syrius_wallet_flutter/model/database/wallet_notification.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
-import 'package:zenon_syrius_wallet_flutter/utils/device_utils.dart';
-import 'package:zenon_syrius_wallet_flutter/utils/navigation_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/notification_utils.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/settings_button.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/loading_button.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/custom_expandable_panel.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/layout_scaffold/card_scaffold.dart';
-import 'package:znn_sdk_dart/znn_sdk_dart.dart';
-
-import '../../../blocs/notifications_bloc.dart';
-import '../../../main.dart';
-import '../../../model/database/notification_type.dart';
-import '../../../model/database/wallet_notification.dart';
-import '../../../utils/notifiers/app_theme_notifier.dart';
-import '../../reusable_widgets/buttons/loading_button.dart';
 
 class SwapOptions extends StatefulWidget {
   final VoidCallback onResyncWalletPressed;

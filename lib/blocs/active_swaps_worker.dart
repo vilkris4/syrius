@@ -566,7 +566,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
   }
 
   Future<bool> _canProxyUnlock(Address address) async {
-    return await zenon!.embedded.htlc.getHtlcProxyUnlockStatus(address);
+    return await zenon!.embedded.htlc.getProxyUnlockStatus(address);
   }
 
   bool _isIncomingDeposit(HtlcInfo htlcInfo) {

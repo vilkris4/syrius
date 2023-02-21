@@ -51,7 +51,7 @@ class _SettingsAddressState extends State<SettingsAddress> {
     super.initState();
     _labelController.text = kAddressLabelMap[widget.address]!;
     _proxyUnlockFuture = zenon!.embedded.htlc
-        .getHtlcProxyUnlockStatus(Address.parse(widget.address!));
+        .getProxyUnlockStatus(Address.parse(widget.address!));
   }
 
   @override

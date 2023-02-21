@@ -61,7 +61,7 @@ dependencies:
   znn_sdk_dart:
     git:
       url: https://github.com/sol-sanctum/znn_sdk_dart.git
-      ref: ebacdcd65e375e3111beae490b5ddd423ebb9f04 #spork_htlc
+      ref: spork_htlc
   znn_swap_utility:
     git:
       url: https://github.com/zenon-network/znn_swap_utility.git
