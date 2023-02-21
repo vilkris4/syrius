@@ -264,10 +264,10 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
 
   //TODO: encrypt preimage before saving
   Future<void> addPendingSwap({
-    required String json,
+    required HtlcInfo htlc,
     List<int>? preimage,
   }) async {
-    HtlcInfo pendingCreatedSwap = HtlcInfo.fromJson(jsonDecode(json));
+    HtlcInfo pendingCreatedSwap = htlc;
     _cachedSwaps.add(pendingCreatedSwap);
 
     String _preimage =
