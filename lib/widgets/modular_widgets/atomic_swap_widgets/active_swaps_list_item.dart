@@ -47,6 +47,8 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
   final GlobalKey<FormState> _depositAmountKey = GlobalKey();
 
   late final Future<Token?> _tokenFuture;
+  late final Future<bool?> _proxyUnlockFuture;
+  late final Future<List> _futures;
 
   StreamSubscription? _expirationSubscription;
   StreamSubscription? _pendingIdSubscription;
@@ -60,6 +62,9 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
     super.initState();
     _tokenFuture =
         zenon!.embedded.token.getByZts(widget.htlcInfo!.tokenStandard);
+    _proxyUnlockFuture = zenon!.embedded.htlc
+        .getHtlcProxyUnlockStatus(widget.htlcInfo!.hashLocked);
+    _futures = Future.wait([_tokenFuture, _proxyUnlockFuture]);
 
     if (_isSwapInProgress()) {
       _expirationSubscription =
@@ -71,6 +76,10 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
           setState(() {});
         }
       });
+    } else {
+      if (_isIncomingDeposit()) {
+        sl.get<ActiveSwapsWorker>().removeSwap(widget.htlcInfo!.id);
+      }
     }
 
     // TODO (vilkris): This is only a temporary solution
@@ -84,7 +93,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
       });
     }
 
-    if (_isSwapInProgress() && _isIncomingDeposit()) {
+    if (_isSwapInProgress()) {
       _autoUnlockSubscription =
           Stream.periodic(const Duration(seconds: 1)).listen((_) {
         if (sl
@@ -112,11 +121,11 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
   Widget build(BuildContext context) {
     return DefaultTextStyle(
       style: Theme.of(context).textTheme.displayMedium!,
-      child: FutureBuilder<Token?>(
-        future: _tokenFuture,
+      child: FutureBuilder<List>(
+        future: _futures,
         builder: (_, snapshot) {
           if (snapshot.hasData && mounted) {
-            return _getSwapItem(context, snapshot.data!);
+            return _getSwapItem(context, snapshot.data![0], snapshot.data![1]);
           } else if (snapshot.hasError) {
             return SyriusErrorWidget(snapshot.error!);
           }
@@ -126,7 +135,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
     );
   }
 
-  Widget _getSwapItem(BuildContext context, Token token) {
+  Widget _getSwapItem(BuildContext context, Token token, bool canProxyUnlock) {
     return Container(
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
@@ -163,7 +172,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
               height: 10.0,
             ),
             const Spacer(),
-            _getButtons(token),
+            _getButtons(token, canProxyUnlock),
           ]),
           const SizedBox(
             height: 20.0,
@@ -284,14 +293,15 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
     );
   }
 
-  Widget _getButtons(Token token) {
+  Widget _getButtons(Token token, bool canProxyUnlock) {
     final List<Widget> buttons = [];
-    if (_isSwapInProgress() && _isIncomingDeposit() && !_isUnlocking) {
-      if (_canMakeCounterDeposit()) {
+    if (_isSwapInProgress() && !_isUnlocking) {
+      if (_canMakeCounterDeposit() && _isIncomingDeposit()) {
         buttons.add(_getDepositButtonViewModel(token));
-        buttons.add(_getUnlockButtonViewModel(token));
-      } else {
-        buttons.add(_getUnlockButtonViewModel(token));
+        buttons.add(_getUnlockButtonViewModel(token, canProxyUnlock));
+      } else if (_isIncomingDeposit() ||
+          (canProxyUnlock && !_isOutgoingDeposit())) {
+        buttons.add(_getUnlockButtonViewModel(token, canProxyUnlock));
       }
     }
     if (_isSwapExpired() && _isOutgoingDeposit() && !_isReclaiming) {
@@ -447,7 +457,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
     );
   }
 
-  Widget _getUnlockButtonViewModel(Token token) {
+  Widget _getUnlockButtonViewModel(Token token, bool canProxyUnlock) {
     return ViewModelBuilder<UnlockHtlcBloc>.reactive(
       fireOnModelReadyOnce: true,
       onModelReady: (model) {
@@ -476,7 +486,9 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
             style: ButtonStyle(
               backgroundColor: _canMakeCounterDeposit()
                   ? MaterialStateProperty.all(AppColors.darkSecondary)
-                  : MaterialStateProperty.all(AppColors.znnColor),
+                  : _isIncomingDeposit() //(canProxyUnlock && !_isOutgoingDeposit())
+                      ? MaterialStateProperty.all(AppColors.znnColor)
+                      : MaterialStateProperty.all(AppColors.qsrColor),
               shape: MaterialStateProperty.all(RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(4.0))),
             ),
@@ -521,7 +533,9 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
     model.unlockHtlc(
       id: widget.htlcInfo!.id,
       preimage: _secretController.text,
-      hashLocked: widget.htlcInfo!.hashLocked,
+      hashLocked: _isIncomingDeposit()
+          ? widget.htlcInfo!.hashLocked
+          : Address.parse(kSelectedAddress!),
     );
   }
 

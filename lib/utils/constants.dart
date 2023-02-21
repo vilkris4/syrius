@@ -101,6 +101,8 @@ const String kWindowMaximizedKey = 'window_maximized_key';
 const String kHtlcCreatedSwapsKey = 'htlc_created_swaps_key';
 const String kHtlcDiscoveredSwapsKey = 'htlc_discovered_swaps_key';
 const String kHltcLastCheckpointKey = 'htlc_last_checkpoint_key';
+const String kHtlcAtomicUnlocksKey = 'htlc_atomic_unlocks_key';
+const String kHtlcAutoReclaimKey = 'htlc_auto_reclaim_key';
 
 const double kDefaultBorderOutlineWidth = 1.0;
 const double kMinDelegationAmount = 1.0;

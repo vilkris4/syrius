@@ -1,14 +1,23 @@
+//TODO: Update ViewModelBuilder when menu option is selected
+
 import 'package:flutter/material.dart';
+import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:hive/hive.dart';
+import 'package:stacked/stacked.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/htlc/update_proxy_unlocking_htlc_bloc.dart';
+import 'package:zenon_syrius_wallet_flutter/main.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/notification_utils.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/loading_button.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/error_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/material_icon_button.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/outlined_button.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/settings_button.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/icons/copy_to_clipboard_icon.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/input_field.dart';
+import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
 class SettingsAddress extends StatefulWidget {
   final String? address;
@@ -26,25 +35,45 @@ class SettingsAddress extends StatefulWidget {
 
 class _SettingsAddressState extends State<SettingsAddress> {
   bool _editable = false;
+  bool _proxyUnlockable = true;
+
+  late final Future<bool?> _proxyUnlockFuture;
+  final UpdateProxyUnlockingHtlcBloc _updateProxyUnlockingHtlcModel =
+      UpdateProxyUnlockingHtlcBloc();
 
   final TextEditingController _labelController = TextEditingController();
 
   final GlobalKey<MyOutlinedButtonState> _changeButtonKey = GlobalKey();
+  final GlobalKey<LoadingButtonState> _proxyUnlockButtonKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     _labelController.text = kAddressLabelMap[widget.address]!;
+    _proxyUnlockFuture = zenon!.embedded.htlc
+        .getHtlcProxyUnlockStatus(Address.parse(widget.address!));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        vertical: 5.0,
-      ),
-      child:
-          _editable ? _getAddressLabelInputField() : _getAddressLabel(context),
+    return FutureBuilder<bool?>(
+      future: _proxyUnlockFuture,
+      builder: (_, snapshot) {
+        if (snapshot.hasData && mounted) {
+          _proxyUnlockable = snapshot.data!;
+          return Container(
+            margin: const EdgeInsets.symmetric(
+              vertical: 5.0,
+            ),
+            child: _editable
+                ? _getAddressLabelInputField()
+                : _getAddressLabel(context),
+          );
+        } else if (snapshot.hasError) {
+          return SyriusErrorWidget(snapshot.error!);
+        }
+        return Container();
+      },
     );
   }
 
@@ -82,6 +111,10 @@ class _SettingsAddressState extends State<SettingsAddress> {
         const SizedBox(
           width: 5.0,
         ),
+        _getProxyUnlockButtonViewModel(),
+        const SizedBox(
+          width: 5.0,
+        ),
         MaterialIconButton(
           iconData: Icons.edit,
           onPressed: () {
@@ -98,6 +131,7 @@ class _SettingsAddressState extends State<SettingsAddress> {
           widget.address,
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
+        _getPopupMenuButton(),
         const SizedBox(
           width: 5.0,
         ),
@@ -235,6 +269,97 @@ class _SettingsAddressState extends State<SettingsAddress> {
     } finally {
       _changeButtonKey.currentState!.showLoadingIndicator(false);
     }
+  }
+
+  Widget _getPopupMenuButton() {
+    final List<String> options = [
+      '${_proxyUnlockable ? 'Disable' : 'Enable'} proxy unlock',
+    ];
+    return SizedBox(
+      width: 40.0,
+      child: PopupMenuButton<String>(
+        onSelected: (String selection) {
+          if (selection == options[0]) {
+            _updateProxyUnlocking(_updateProxyUnlockingHtlcModel);
+          }
+        },
+        icon: const Icon(
+          Icons.more_vert,
+          color: AppColors.znnColor,
+        ),
+        splashRadius: 15.0,
+        itemBuilder: (BuildContext context) {
+          return options.map((String selection) {
+            return PopupMenuItem<String>(
+              value: selection,
+              height: kMinInteractiveDimension / 2,
+              child: Row(
+                children: [
+                  Text(selection),
+                  const SizedBox(width: 5.0),
+                  const Icon(FontAwesome.question_circle, size: 15.0)
+                ],
+              ),
+            );
+          }).toList();
+        },
+      ),
+    );
+  }
+
+  Widget _getProxyUnlockButtonViewModel() {
+    return ViewModelBuilder<UpdateProxyUnlockingHtlcBloc>.reactive(
+      fireOnModelReadyOnce: true,
+      onModelReady: (model) {
+        model.stream.listen(
+          (event) async {
+            if (event is AccountBlockTemplate) {
+              bool unconfirmed = true;
+              while (unconfirmed) {
+                await Future.delayed(const Duration(seconds: 3));
+                if (await zenon!.ledger.getAccountBlockByHash(event.hash) !=
+                    null) {
+                  unconfirmed = false;
+                }
+              }
+              setState(() {
+                _proxyUnlockButtonKey.currentState?.animateReverse();
+              });
+            }
+          },
+          onError: (error) {
+            setState(() {
+              _proxyUnlockable = !_proxyUnlockable;
+              _proxyUnlockButtonKey.currentState?.animateReverse();
+            });
+          },
+        );
+      },
+      builder: (_, model, __) => !_proxyUnlockable
+          ? Tooltip(
+              message: 'Proxy unlocking is disabled',
+              child: LoadingButton.icon(
+                key: _proxyUnlockButtonKey,
+                minimumSize: const Size(25.0, 25.0),
+                icon: const Icon(Octicons.primitive_dot, color: Colors.red),
+                outlineColor: Theme.of(context).colorScheme.primary,
+                onPressed: () {},
+              ),
+            )
+          : Container(),
+      viewModelBuilder: () => _updateProxyUnlockingHtlcModel,
+    );
+  }
+
+  void _updateProxyUnlocking(UpdateProxyUnlockingHtlcBloc model) {
+    setState(() {
+      _proxyUnlockable = !_proxyUnlockable;
+    });
+    _proxyUnlockButtonKey.currentState?.animateForward();
+    model.updateProxy(
+      address: Address.parse(widget.address!),
+      allowed: _proxyUnlockable,
+    );
   }
 
   @override

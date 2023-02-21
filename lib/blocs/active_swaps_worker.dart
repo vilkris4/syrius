@@ -121,10 +121,13 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
               final Hash hashId = args[0];
               final List<int> preimage = args[1];
 
-              try {
-                await autoUnlock(preimage);
-              } catch (e) {
-                print('autoUnlock(preimage) failed: $e');
+              if (synced) {
+                //TODO review this
+                try {
+                  await autoUnlock(preimage);
+                } catch (e) {
+                  print('autoUnlock(preimage) failed: $e');
+                }
               }
               await removeSwap(hashId);
             } else if (f.name.toString() == 'Reclaim') {
@@ -199,8 +202,8 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
         _createdSwapsList[i].forEach((htlc, preimage) {
           HtlcInfo savedSwap = HtlcInfo.fromJson(jsonDecode(htlc));
           if (savedSwap.id == hashId) {
-            print(
-                'removed ${savedSwap.id.toString()} from createdSwapsList because it was unlocked, reclaimed, or expired');
+            //print(
+            //   'removed ${savedSwap.id.toString()} from createdSwapsList because it was unlocked, reclaimed, or expired');
             createdSwapsList.removeAt(i);
           }
         });
@@ -212,8 +215,8 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
       List cachedSwaps = _cachedSwaps.toList();
       for (var i = 0; i < cachedSwaps.length; i++) {
         if (cachedSwaps[i].id == hashId) {
-          print(
-              'removed ${cachedSwaps[i].id.toString()} from cachedSwaps because it was unlocked, reclaimed, or expired');
+          //print(
+          //    'removed ${cachedSwaps[i].id.toString()} from cachedSwaps because it was unlocked, reclaimed, or expired');
           _cachedSwaps.removeAt(i);
           _controller.add(_cachedSwaps);
         }
@@ -255,7 +258,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
   Future<bool> _confirmPendingSwap(Hash id) async {
     bool confirmed = false;
     while (!confirmed) {
-      await Future.delayed(Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 2));
     }
   }
 
@@ -389,7 +392,10 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
     List<int> unlockedSha256 = await Crypto.sha256Bytes(unlockedHashlock);
 
     for (HtlcInfo lockedSwap in _cachedSwaps) {
-      if (kDefaultAddressList.contains(lockedSwap.hashLocked.toString())) {
+      if (kDefaultAddressList.contains(lockedSwap.hashLocked.toString()) ||
+          (_isAtomicUnlockingEnabled() &&
+              await _canProxyUnlock(lockedSwap.hashLocked) &&
+              kDefaultAddressList.contains(lockedSwap.timeLocked.toString()))) {
         if (eq(lockedSwap.hashLock, unlockedSha3) ||
             eq(lockedSwap.hashLock, unlockedSha256)) {
           bool _isExpired = lockedSwap.expirationTime <
@@ -406,7 +412,9 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
               UnlockHtlcBloc().unlockHtlc(
                 id: lockedSwap.id,
                 preimage: hex.encode(unlockedHashlock),
-                hashLocked: lockedSwap.hashLocked,
+                hashLocked: _isIncomingDeposit(lockedSwap)
+                    ? lockedSwap.hashLocked
+                    : Address.parse(kSelectedAddress!),
               );
             }
           } else if (!_isExpired) {
@@ -414,7 +422,9 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
             UnlockHtlcBloc().unlockHtlc(
               id: lockedSwap.id,
               preimage: hex.encode(unlockedHashlock),
-              hashLocked: lockedSwap.hashLocked,
+              hashLocked: _isIncomingDeposit(lockedSwap)
+                  ? lockedSwap.hashLocked
+                  : Address.parse(kSelectedAddress!),
             );
           }
         }
@@ -546,6 +556,27 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
     //   kHtlcLastCheckedHeightKey,
     //   height,
     //  );
+  }
+
+  bool _isAtomicUnlockingEnabled() {
+    return sharedPrefsService!.get(
+      kHtlcAtomicUnlocksKey,
+      defaultValue: true,
+    );
+  }
+
+  Future<bool> _canProxyUnlock(Address address) async {
+    return await zenon!.embedded.htlc.getHtlcProxyUnlockStatus(address);
+  }
+
+  bool _isIncomingDeposit(HtlcInfo htlcInfo) {
+    return kDefaultAddressList.contains(htlcInfo.hashLocked.toString());
+  }
+
+  bool _isSwapExpired(HtlcInfo htlcInfo) {
+    final remaining = htlcInfo.expirationTime -
+        ((DateTime.now().millisecondsSinceEpoch) / 1000).floor();
+    return remaining <= 0;
   }
 
   //TODO: improve notifications

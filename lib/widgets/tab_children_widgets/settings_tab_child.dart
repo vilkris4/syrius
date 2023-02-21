@@ -9,6 +9,7 @@ import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/settings_wid
 import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/settings_widgets/node_management.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/settings_widgets/peers.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/settings_widgets/security.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/settings_widgets/swap_options.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/settings_widgets/wallet_options.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/layout_scaffold/standard_fluid_layout.dart';
 
@@ -88,7 +89,13 @@ class _SettingsTabChildState extends State<SettingsTabChild> {
           child: WalletOptions(
             widget._onResyncWalletPressed,
           ),
-          height: kStaggeredNumOfColumns / 3,
+          height: kStaggeredNumOfColumns / 6,
+        ),
+        FluidCell(
+          child: SwapOptions(
+            widget._onResyncWalletPressed,
+          ),
+          height: kStaggeredNumOfColumns / 6,
         ),
         FluidCell(
           width: context.layout.value(
