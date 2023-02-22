@@ -46,7 +46,10 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
     return _instance!;
   }
 
+  bool runningSync = false;
+
   // to be renamed
+  // don't call this method when widget rebuilds (example: resize window)
   Future<List<HtlcInfo>> parseHtlcContractBlocks() async {
     if (!_boxOpened) {
       await _openActiveSwapsBox();
@@ -58,17 +61,24 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
       _loadedSavedSwaps = true;
     }
 
-    int _height = await _getEarliestContractHeight();
-    int _currentHeight =
-        ((await zenon!.ledger.getFrontierAccountBlock(htlcAddress))?.height)!;
+    int frontierContractHeight =
+        (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))?.height ?? 0;
+    if (frontierContractHeight > 0) {
+      int earliestContractHeight = await _getEarliestContractHeight();
+      if (earliestContractHeight == 0) {
+        earliestContractHeight = 1;
+      }
 
-    if (_lastCheckpoint <= _height && _height < _currentHeight) {
-      await _parseHtlcContractBlocks(_height);
-    } else if (_lastCheckpoint > _height && _lastCheckpoint < _currentHeight) {
-      await _parseHtlcContractBlocks(_lastCheckpoint);
+      if (_lastCheckpoint <= earliestContractHeight &&
+          earliestContractHeight <= frontierContractHeight) {
+        await _parseHtlcContractBlocks(earliestContractHeight);
+      } else if (_lastCheckpoint > earliestContractHeight &&
+          _lastCheckpoint < frontierContractHeight) {
+        await _parseHtlcContractBlocks(_lastCheckpoint);
+      }
     }
 
-    _lastCheckpoint = _currentHeight;
+    _lastCheckpoint = frontierContractHeight;
     _synced = true;
     return _cachedSwaps;
   }
@@ -79,6 +89,32 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
     AccountBlock frontierContractBlock =
         (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!;
     int delta = frontierContractBlock.height - startingHeight + 1;
+
+    if (delta <= 200) {
+      _parseBlocks(startingHeight, delta);
+    } else {
+      int _height = startingHeight;
+      while (_height < frontierContractBlock.height) {
+        int _delta = 200;
+        if (_height + _delta > frontierContractBlock.height) {
+          _delta = frontierContractBlock.height - _height + 1;
+        }
+        while (runningSync) {
+          print('waiting for sync to finish...');
+          await Future.delayed(const Duration(seconds: 5));
+        }
+        await _parseBlocks(_height, _delta);
+        _height += _delta;
+      }
+    }
+    //TODO: SAVE CHECKPOINT
+    //await _saveLastCheckedHeightValueToCache(
+    //   (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!.height);
+  }
+
+  //tmp fix
+  Future<void> _parseBlocks(int startingHeight, int delta) async {
+    runningSync = true;
     AccountBlockList contractBlocks = await zenon!.ledger
         .getAccountBlocksByHeight(htlcAddress, startingHeight, delta);
 
@@ -143,9 +179,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
         }
       }
     }
-    //TODO: SAVE CHECKPOINT
-    //await _saveLastCheckedHeightValueToCache(
-    //   (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!.height);
+    runningSync = false;
   }
 
   Future<void> _openActiveSwapsBox() async {
@@ -530,12 +564,12 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
   Future<int> _getEarliestContractHeight() async {
     int frontierMomentumHeight =
         (await zenon!.ledger.getFrontierMomentum()).height;
-    AccountBlock frontierContractBlock =
-        (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))!;
+    int frontierContractBlockHeight =
+        (await zenon!.ledger.getFrontierAccountBlock(htlcAddress))?.height ?? 0;
     int earliestContractHeight = 0;
 
-    if (frontierContractBlock.height >= 10) {
-      for (var i = frontierContractBlock.height; i >= 0; i -= 10) {
+    if (frontierContractBlockHeight >= 10) {
+      for (var i = frontierContractBlockHeight; i > 0; i -= 10) {
         var contractBlock =
             await zenon!.ledger.getAccountBlocksByHeight(htlcAddress, i, 1);
 
