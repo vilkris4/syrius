@@ -55,13 +55,14 @@ class InputValidators {
     }
   }
 
-  static String? correctValue(String? value,
-      num? maxValue,
-      int decimals, {
-        num min = 0,
-        bool canBeEqualToMin = false,
-        bool canBeBlank = false,
-      }) {
+  static String? correctValue(
+    String? value,
+    num? maxValue,
+    int decimals, {
+    num min = 0,
+    bool canBeEqualToMin = false,
+    bool canBeBlank = false,
+  }) {
     if (value != null) {
       try {
         if (maxValue == 0) {
@@ -91,14 +92,14 @@ class InputValidators {
           return min <= inputNum && inputNum <= maxValue
               ? null
               : maxValue == min
-              ? 'Value must be $min'
-              : 'Value must be between $min and $maxValue';
+                  ? 'Value must be $min'
+                  : 'Value must be between $min and $maxValue';
         }
         return min < inputNum && inputNum <= maxValue
             ? null
             : maxValue == min
-            ? 'Value must be $min'
-            : 'Value must be between $min and $maxValue';
+                ? 'Value must be $min'
+                : 'Value must be between $min and $maxValue';
       } catch (e) {
         Logger.logError(e);
         return 'Error';
@@ -131,7 +132,7 @@ class InputValidators {
         return 'Password not strong enough';
       }
       String pattern =
-      r'''^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[`~!@#$%^&*()\-_=+\[\]\{\}\\|;:",<.>\/\?']).{8,}$''';
+          r'''^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[`~!@#$%^&*()\-_=+\[\]\{\}\\|;:",<.>\/\?']).{8,}$''';
       RegExp regExp = RegExp(pattern);
       if (regExp.hasMatch(value)) {
         return null;
@@ -194,13 +195,11 @@ class InputValidators {
   static Future<String?> checkSecret(HtlcInfo htlc, String? value) async {
     if (value != null) {
       try {
-        Hash preimageCheck;
-        (htlc.hashType == 1) ?
-        preimageCheck =
-            Hash.fromBytes(await Crypto.sha256Bytes(hex.decode(value))) :
-        preimageCheck = (Hash.digest(hex.decode(value)));
+        final preimageCheck = htlc.hashType == htlcHashTypeSha3
+            ? Hash.digest(hex.decode(value))
+            : Hash.fromBytes(await Crypto.sha256Bytes(hex.decode(value)));
 
-        if (preimageCheck == Hash.fromBytes(htlc.hashLock!)) {
+        if (preimageCheck == Hash.fromBytes(htlc.hashLock)) {
           return null;
         }
       } catch (e) {

@@ -369,7 +369,7 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
     if (InputValidators.checkHash(searchTerm) == null) {
       for (var htlc in _activeSwaps) {
         if (htlc.id.equals(Hash.parse(searchTerm)) ||
-            Hash.fromBytes(htlc.hashLock!).equals(Hash.parse(searchTerm))) {
+            Hash.fromBytes(htlc.hashLock).equals(Hash.parse(searchTerm))) {
           _filteredSwaps.add(htlc);
         }
       }

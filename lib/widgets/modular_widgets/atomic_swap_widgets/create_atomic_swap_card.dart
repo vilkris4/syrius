@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -40,21 +39,15 @@ class CreateAtomicSwapCard extends StatefulWidget {
 
 class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
     with SingleTickerProviderStateMixin {
-  final TextEditingController _recipientController = TextEditingController();
-  final TextEditingController _amountController = TextEditingController();
-  final TextEditingController _hashlockController = TextEditingController();
-
-  final GlobalKey<FormState> _recipientKey = GlobalKey();
-  final GlobalKey<FormState> _hashlockKey = GlobalKey();
   final GlobalKey<LoadingButtonState> _createAtomicSwapButtonKey = GlobalKey();
 
   final Duration _animationDuration = const Duration(milliseconds: 200);
 
   final List<BasicDropdownItem<int>> _lockDurationItems = [
-    BasicDropdownItem(label: '3 hours', value: htlcTimelockUnitSec * 3),
+    BasicDropdownItem(label: '3 hours', value: kOneHourInSeconds * 3),
     BasicDropdownItem(
-        label: '12 hours (default)', value: htlcTimelockUnitSec * 12),
-    BasicDropdownItem(label: '24 hours', value: htlcTimelockUnitSec * 24),
+        label: '12 hours (default)', value: kOneHourInSeconds * 12),
+    BasicDropdownItem(label: '24 hours', value: kOneHourInSeconds * 24),
   ];
 
   final List<BasicDropdownItem<int>> _hashTypeItems = [
@@ -64,12 +57,15 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
 
   late final AnimationController _animationController;
 
+  TextEditingController _recipientController = TextEditingController();
+  TextEditingController _amountController = TextEditingController();
+  TextEditingController _hashlockController = TextEditingController();
+
   String? _selectedSelfAddress = kSelectedAddress;
   BasicDropdownItem<int>? _selectedLockDuration;
   BasicDropdownItem<int>? _selectedHashType;
   Token _selectedToken = kDualCoin.first;
   bool _isAmountValid = false;
-  int? _expirationTime;
   bool _isAdvancedOptionsExpanded = false;
 
   @override
@@ -126,7 +122,6 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
 
   Column _getMandatoryInputFields() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AddressesDropdown(
           _selectedSelfAddress,
@@ -136,35 +131,31 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
           }),
         ),
         kVerticalSpacing,
-        Form(
-          key: _recipientKey,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          child: InputField(
-            onChanged: (value) {
-              setState(() {});
+        InputField(
+          onChanged: (value) {
+            setState(() {});
+          },
+          validator: (value) => InputValidators.checkAddress(value),
+          controller: _recipientController,
+          suffixIcon: RawMaterialButton(
+            child: const Icon(
+              Icons.content_paste,
+              color: AppColors.darkHintTextColor,
+              size: 15.0,
+            ),
+            shape: const CircleBorder(),
+            onPressed: () {
+              ClipboardUtils.pasteToClipboard(context, (String value) {
+                _recipientController.text = value;
+                setState(() {});
+              });
             },
-            validator: (value) => InputValidators.checkAddress(value),
-            controller: _recipientController,
-            suffixIcon: RawMaterialButton(
-              child: const Icon(
-                Icons.content_paste,
-                color: AppColors.darkHintTextColor,
-                size: 15.0,
-              ),
-              shape: const CircleBorder(),
-              onPressed: () {
-                ClipboardUtils.pasteToClipboard(context, (String value) {
-                  _recipientController.text = value;
-                  setState(() {});
-                });
-              },
-            ),
-            suffixIconConstraints: const BoxConstraints(
-              maxWidth: 45.0,
-              maxHeight: 20.0,
-            ),
-            hintText: 'Recipient address',
           ),
+          suffixIconConstraints: const BoxConstraints(
+            maxWidth: 45.0,
+            maxHeight: 20.0,
+          ),
+          hintText: 'Recipient address',
         ),
         kVerticalSpacing,
         StreamBuilder<Map<String, AccountInfo>?>(
@@ -205,10 +196,10 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
           onTap: () {
             setState(() {
               _isAdvancedOptionsExpanded = !_isAdvancedOptionsExpanded;
+              _isAdvancedOptionsExpanded
+                  ? _animationController.forward()
+                  : _animationController.reverse();
             });
-            _isAdvancedOptionsExpanded
-                ? _animationController.forward()
-                : _animationController.reverse();
           },
           child: SizedBox(
             height: 30.0,
@@ -262,36 +253,31 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
                   }),
                 ),
                 kVerticalSpacing,
-                Form(
-                  key: _hashlockKey,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  child: InputField(
-                    onChanged: (value) {
-                      setState(() {});
+                InputField(
+                  onChanged: (value) {
+                    setState(() {});
+                  },
+                  validator: (value) => InputValidators.checkHash(value),
+                  controller: _hashlockController,
+                  suffixIcon: RawMaterialButton(
+                    child: const Icon(
+                      Icons.content_paste,
+                      color: AppColors.darkHintTextColor,
+                      size: 15.0,
+                    ),
+                    shape: const CircleBorder(),
+                    onPressed: () {
+                      ClipboardUtils.pasteToClipboard(context, (String value) {
+                        _recipientController.text = value;
+                        setState(() {});
+                      });
                     },
-                    validator: (value) => InputValidators.checkHash(value),
-                    controller: _hashlockController,
-                    suffixIcon: RawMaterialButton(
-                      child: const Icon(
-                        Icons.content_paste,
-                        color: AppColors.darkHintTextColor,
-                        size: 15.0,
-                      ),
-                      shape: const CircleBorder(),
-                      onPressed: () {
-                        ClipboardUtils.pasteToClipboard(context,
-                            (String value) {
-                          _recipientController.text = value;
-                          setState(() {});
-                        });
-                      },
-                    ),
-                    suffixIconConstraints: const BoxConstraints(
-                      maxWidth: 45.0,
-                      maxHeight: 20.0,
-                    ),
-                    hintText: 'Pre-existing hashlock',
                   ),
+                  suffixIconConstraints: const BoxConstraints(
+                    maxWidth: 45.0,
+                    maxHeight: 20.0,
+                  ),
+                  hintText: 'Pre-existing hashlock',
                 ),
               ],
             ),
@@ -310,15 +296,18 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
               _sendConfirmationNotification();
               setState(() {
                 _createAtomicSwapButtonKey.currentState?.animateReverse();
+                _recipientController = TextEditingController();
+                _amountController = TextEditingController();
+                _hashlockController = TextEditingController();
+                _selectedLockDuration = null;
+                _selectedHashType = null;
               });
             }
           },
           onError: (error) {
             //TODO: remove pending swap?
             _sendErrorNotification(error);
-            setState(() {
-              _createAtomicSwapButtonKey.currentState?.animateReverse();
-            });
+            _createAtomicSwapButtonKey.currentState?.animateReverse();
           },
         );
       },
@@ -329,24 +318,25 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
 
   Widget _getCreateAtomicSwapButton(CreateHtlcBloc model) {
     return LoadingButton.stepper(
-      onPressed: (_isInputValid())
-          ? () {
-              _onCreateButtonPressed(model);
-            }
-          : null,
+      onPressed: _isInputValid() ? () => _onCreateButtonPressed(model) : null,
       text: 'Create Atomic Swap',
       key: _createAtomicSwapButtonKey,
     );
   }
 
   void _onCreateButtonPressed(CreateHtlcBloc model) async {
-    final preimage = _generatePreimage();
-    final hashLock =
-        (_selectedHashType?.value ?? htlcHashTypeSha3) == htlcHashTypeSha3
-            ? Hash.digest(preimage)
-            : Hash.fromBytes(await Crypto.sha256Bytes(preimage));
+    late final Hash hashLock;
+    List<int>? preimage;
 
-    _expirationTime = await _getExpirationTime(_selectedLockDuration);
+    if (_hashlockController.text.isEmpty) {
+      preimage = _generatePreimage();
+      hashLock =
+          (_selectedHashType?.value ?? htlcHashTypeSha3) == htlcHashTypeSha3
+              ? Hash.digest(preimage)
+              : Hash.fromBytes(await Crypto.sha256Bytes(preimage));
+    } else {
+      hashLock = Hash.parse(_hashlockController.text);
+    }
 
     final newHtlc = HtlcInfo(
         id: Hash.parse('0' * Hash.length * 2),
@@ -356,7 +346,7 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
         amount: _amountController.text
             .toNum()
             .extractDecimals(_selectedToken.decimals),
-        expirationTime: _expirationTime!,
+        expirationTime: await _getExpirationTime(),
         hashType: _selectedHashType?.value ?? 0,
         keyMaxSize: 255,
         hashLock: hashLock.getBytes()!);
@@ -372,28 +362,24 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
       controller: _secretController,
       key: _secretKey,
       preimage: preimage,
-      onCreateButtonPressed: () async {
+      onCreateButtonPressed: () {
+        _createAtomicSwapButtonKey.currentState?.animateForward();
         sl.get<ActiveSwapsWorker>().addPendingSwap(
               htlc: newHtlc,
               preimage: preimage,
             );
-        _sendCreateHtlcBlock(model, hashLock);
+        model.createHtlc(
+          timeLocked: newHtlc.timeLocked,
+          token: _selectedToken,
+          amount: _amountController.text,
+          hashLocked: newHtlc.hashLocked,
+          expirationTime: newHtlc.expirationTime,
+          hashType: newHtlc.hashType,
+          keyMaxSize: newHtlc.keyMaxSize,
+          hashLock: newHtlc.hashLock,
+        );
         Navigator.pop(context);
       },
-    );
-  }
-
-  void _sendCreateHtlcBlock(CreateHtlcBloc model, Hash hashLock) async {
-    _createAtomicSwapButtonKey.currentState?.animateForward();
-    model.createHtlc(
-      timeLocked: Address.parse(_selectedSelfAddress!),
-      token: _selectedToken,
-      amount: _amountController.text,
-      hashLocked: Address.parse(_recipientController.text),
-      expirationTime: _expirationTime!,
-      hashType: _selectedHashType?.value ?? 0,
-      keyMaxSize: 255,
-      hashLock: hashLock.getBytes()!,
     );
   }
 
@@ -402,11 +388,11 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
     return List<int>.generate(length, (i) => Random.secure().nextInt(maxInt));
   }
 
-  Future<int> _getExpirationTime(BasicDropdownItem<int>? lockDuration) async {
+  Future<int> _getExpirationTime() async {
     final currentTime = (await zenon!.ledger.getFrontierMomentum()).timestamp;
     const defaultDuration = kOneHourInSeconds * 12;
-    return lockDuration != null
-        ? lockDuration.value + currentTime
+    return _selectedLockDuration != null
+        ? _selectedLockDuration!.value + currentTime
         : defaultDuration + currentTime;
   }
 

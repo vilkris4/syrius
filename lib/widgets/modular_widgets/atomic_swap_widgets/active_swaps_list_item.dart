@@ -256,8 +256,8 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
       ),
       InfoItemWidget(
         label: 'Hashlock',
-        value: FormatUtils.encodeHexString((widget.htlcInfo!.hashLock)!)
-            .toString(),
+        value:
+            FormatUtils.encodeHexString(widget.htlcInfo!.hashLock).toString(),
         width: itemWidth,
       ),
       _isIncomingDeposit()
@@ -427,17 +427,20 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
       onDepositButtonPressed: (_selectedToken) async {
         _depositFunds(model, _selectedToken);
 
-        final json = '{"id": "${'0' * Hash.length * 2}",'
-            '"timeLocked": "${widget.htlcInfo?.hashLocked}",'
-            '"hashLocked": "${widget.htlcInfo?.timeLocked}",'
-            '"tokenStandard": "${_selectedToken.tokenStandard}",'
-            '"amount": ${AmountUtils.extractDecimals(double.parse(_depositAmountController.text), _selectedToken.decimals)},'
-            '"expirationTime": ${widget.htlcInfo?.expirationTime},'
-            '"hashType": ${widget.htlcInfo?.hashType},'
-            '"keyMaxSize": ${widget.htlcInfo?.keyMaxSize},'
-            '"hashLock": "${base64.encode((widget.htlcInfo?.hashLock)!)}"}';
+        final newHtlc = HtlcInfo(
+            id: Hash.parse('0' * Hash.length * 2),
+            timeLocked: widget.htlcInfo!.hashLocked,
+            hashLocked: widget.htlcInfo!.timeLocked,
+            tokenStandard: _selectedToken.tokenStandard,
+            amount: AmountUtils.extractDecimals(
+                double.parse(_depositAmountController.text),
+                _selectedToken.decimals),
+            expirationTime: widget.htlcInfo!.expirationTime,
+            hashType: widget.htlcInfo!.hashType,
+            keyMaxSize: widget.htlcInfo!.keyMaxSize,
+            hashLock: widget.htlcInfo!.hashLock);
 
-        await sl.get<ActiveSwapsWorker>().addPendingSwap(json: json);
+        await sl.get<ActiveSwapsWorker>().addPendingSwap(htlc: newHtlc);
         setState(() {});
         Navigator.pop(context);
       },
@@ -453,7 +456,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
       expirationTime: widget.htlcInfo!.expirationTime,
       hashType: widget.htlcInfo!.hashType,
       keyMaxSize: widget.htlcInfo!.keyMaxSize,
-      hashLock: (widget.htlcInfo!.hashLock)!,
+      hashLock: widget.htlcInfo!.hashLock,
     );
   }
 
@@ -568,8 +571,8 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
     // deposit isn't a counter deposit made by the counterparty.
     return _isIncomingDeposit() &&
         !sl.get<ActiveSwapsWorker>().cachedSwaps.any((e) =>
-            Hash.fromBytes(e.hashLock!)
-                .equals(Hash.fromBytes(widget.htlcInfo!.hashLock!)) &&
+            Hash.fromBytes(e.hashLock)
+                .equals(Hash.fromBytes(widget.htlcInfo!.hashLock)) &&
             e.id != widget.htlcInfo!.id);
   }
 
@@ -587,8 +590,8 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
         HtlcInfo createdSwap = HtlcInfo.fromJson(jsonDecode(swap));
         if (preimage != null &&
             preimage.isNotEmpty &&
-            Hash.fromBytes((createdSwap.hashLock)!) ==
-                Hash.fromBytes((widget.htlcInfo!.hashLock)!)) {
+            Hash.fromBytes(createdSwap.hashLock) ==
+                Hash.fromBytes(widget.htlcInfo!.hashLock)) {
           return preimage;
         }
       }

@@ -32,7 +32,7 @@ class BasicDropdown<T> extends StatelessWidget {
             style: Theme.of(context).inputDecorationTheme.hintStyle,
           ),
           icon: Container(
-            margin: const EdgeInsets.fromLTRB(10.0, 0.0, 17.5, 0),
+            margin: const EdgeInsets.fromLTRB(10.0, 0.0, 17.5, 0.0),
             child: Icon(
               SimpleLineIcons.arrow_down,
               size: 10.0,
