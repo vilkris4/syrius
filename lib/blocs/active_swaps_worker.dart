@@ -264,11 +264,10 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
 
   //TODO: encrypt preimage before saving
   Future<void> addPendingSwap({
-    required String json,
+    required HtlcInfo htlc,
     List<int>? preimage,
   }) async {
-    HtlcInfo pendingCreatedSwap = HtlcInfo.fromJson(jsonDecode(json));
-    _cachedSwaps.add(pendingCreatedSwap);
+    _cachedSwaps.add(htlc);
 
     String _preimage =
         (preimage != null) ? FormatUtils.encodeHexString(preimage) : '';
@@ -280,7 +279,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
         [];
 
     createdSwapsList.add({
-      json: _preimage.toString(),
+      jsonEncode(htlc.toJson()): _preimage.toString(),
     });
 
     await _activeSwapsBox?.put(
@@ -329,8 +328,8 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
           if (_pendingSwap.amount == _discoveredSwap.amount &&
               _pendingSwap.expirationTime == _discoveredSwap.expirationTime &&
               _pendingSwap.hashLocked == _discoveredSwap.hashLocked &&
-              Hash.fromBytes((_pendingSwap.hashLock)!) ==
-                  Hash.fromBytes((_discoveredSwap.hashLock)!) &&
+              Hash.fromBytes((_pendingSwap.hashLock)) ==
+                  Hash.fromBytes((_discoveredSwap.hashLock)) &&
               _pendingSwap.hashType == _discoveredSwap.hashType &&
               _pendingSwap.keyMaxSize == _discoveredSwap.keyMaxSize &&
               _pendingSwap.tokenStandard == _discoveredSwap.tokenStandard &&
@@ -341,8 +340,8 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
                     _cachedSwap.expirationTime ==
                         _discoveredSwap.expirationTime &&
                     _cachedSwap.hashLocked == _discoveredSwap.hashLocked &&
-                    Hash.fromBytes((_cachedSwap.hashLock)!) ==
-                        Hash.fromBytes((_discoveredSwap.hashLock)!) &&
+                    Hash.fromBytes((_cachedSwap.hashLock)) ==
+                        Hash.fromBytes((_discoveredSwap.hashLock)) &&
                     _cachedSwap.hashType == _discoveredSwap.hashType &&
                     _cachedSwap.keyMaxSize == _discoveredSwap.keyMaxSize &&
                     _cachedSwap.tokenStandard ==
@@ -361,7 +360,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
                 '"expirationTime": ${_discoveredSwap.expirationTime},'
                 '"hashType": ${_discoveredSwap.hashType},'
                 '"keyMaxSize": ${_discoveredSwap.keyMaxSize},'
-                '"hashLock": "${base64.encode((_discoveredSwap.hashLock)!)}"}';
+                '"hashLock": "${base64.encode((_discoveredSwap.hashLock))}"}';
 
             createdSwapsList[i] = {json: preimage};
             _valueChanged = true;
@@ -400,7 +399,7 @@ class ActiveSwapsWorker extends BaseBloc<WalletNotification> {
           '"expirationTime": ${_createdSwap.expirationTime},'
           '"hashType": ${_createdSwap.hashType},'
           '"keyMaxSize": ${_createdSwap.keyMaxSize},'
-          '"hashLock": "${base64.encode((_createdSwap.hashLock)!)}"}';
+          '"hashLock": "${base64.encode((_createdSwap.hashLock))}"}';
       String _preimage = '';
 
       List createdSwapsList = _activeSwapsBox?.get(

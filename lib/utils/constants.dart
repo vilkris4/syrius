@@ -27,22 +27,6 @@ const List<String> kBridgeNetworks = [
   'BNB Smart Chain Mainnet',
 ];
 
-const List<String> kLockDurations = [
-  '3 hours',
-  '12 hours',
-  '24 hours',
-];
-
-const List<String> kHashTypes = [
-  'Default (SHA-3)',
-  'SHA-256',
-];
-
-const List<String> kSwapTypes = [
-  'HTLC',
-  'PTLC',
-];
-
 // Wallet version
 const String kWalletVersion = '0.0.5';
 

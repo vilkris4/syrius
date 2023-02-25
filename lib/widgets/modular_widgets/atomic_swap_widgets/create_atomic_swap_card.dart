@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -8,12 +7,12 @@ import 'package:zenon_syrius_wallet_flutter/blocs/dashboard/balance_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/htlc/create_htlc_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/notifications_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
+import 'package:zenon_syrius_wallet_flutter/model/basic_dropdown_item.dart';
 import 'package:zenon_syrius_wallet_flutter/model/database/notification_type.dart';
 import 'package:zenon_syrius_wallet_flutter/model/database/wallet_notification.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/clipboard_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
-import 'package:zenon_syrius_wallet_flutter/utils/format_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/input_validators.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/notification_utils.dart';
@@ -21,12 +20,9 @@ import 'package:zenon_syrius_wallet_flutter/utils/zts_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/loading_button.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs/swap_dialogs/deposit_dialog.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dropdown/addresses_dropdown.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dropdown/hash_type_dropdown.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dropdown/lock_duration_dropdown.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dropdown/basic_dropdown.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/error_widget.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/icons/copy_to_clipboard_icon.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/amount_input_field.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/hashlock_suffix_widgets.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/input_field.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/layout_scaffold/card_scaffold.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/loading_widget.dart';
@@ -41,28 +37,45 @@ class CreateAtomicSwapCard extends StatefulWidget {
   State<CreateAtomicSwapCard> createState() => _CreateAtomicSwapCardState();
 }
 
-class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
-  final TextEditingController _recipientController = TextEditingController();
-  final TextEditingController _amountController = TextEditingController();
-  final TextEditingController _evmAddressController = TextEditingController();
-  final TextEditingController _hashlockController = TextEditingController();
-
-  final GlobalKey<FormState> _recipientKey = GlobalKey();
-  final GlobalKey<FormState> _hashlockKey = GlobalKey();
+class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
+    with SingleTickerProviderStateMixin {
   final GlobalKey<LoadingButtonState> _createAtomicSwapButtonKey = GlobalKey();
 
+  final Duration _animationDuration = const Duration(milliseconds: 200);
+
+  final List<BasicDropdownItem<int>> _lockDurationItems = [
+    BasicDropdownItem(label: '3 hours', value: kOneHourInSeconds * 3),
+    BasicDropdownItem(
+        label: '12 hours (default)', value: kOneHourInSeconds * 12),
+    BasicDropdownItem(label: '24 hours', value: kOneHourInSeconds * 24),
+  ];
+
+  final List<BasicDropdownItem<int>> _hashTypeItems = [
+    BasicDropdownItem(label: 'SHA-3 (default)', value: htlcHashTypeSha3),
+    BasicDropdownItem(label: 'SHA-256', value: htlcHashTypeSha256),
+  ];
+
+  late final AnimationController _animationController;
+
+  TextEditingController _recipientController = TextEditingController();
+  TextEditingController _amountController = TextEditingController();
+  TextEditingController _hashlockController = TextEditingController();
+
   String? _selectedSelfAddress = kSelectedAddress;
-  String? _selectedLockDuration = kLockDurations[1];
-  String? _selectedHashType = kHashTypes.first;
+  BasicDropdownItem<int>? _selectedLockDuration;
+  BasicDropdownItem<int>? _selectedHashType;
   Token _selectedToken = kDualCoin.first;
-  List<int> _preimage = [];
-  bool _amountIsValid = false;
-  int? _expirationTime;
+  bool _isAmountValid = false;
+  bool _isAdvancedOptionsExpanded = false;
 
   @override
   void initState() {
     super.initState();
     sl.get<BalanceBloc>().getBalanceForAllAddresses();
+    _animationController = AnimationController(
+      duration: _animationDuration,
+      vsync: this,
+    );
   }
 
   //TODO: Confirm CardScaffold description
@@ -97,13 +110,9 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
       margin: const EdgeInsets.all(20.0),
       child: ListView(
         children: [
-          _getInputFields(),
-          Visibility(
-              visible: _preimage.isNotEmpty,
-              child: Column(children: [
-                kVerticalSpacing,
-                _generatePreimageBox(),
-              ])),
+          _getMandatoryInputFields(),
+          kVerticalSpacing,
+          _getAdvancedOptions(),
           kVerticalSpacing,
           _getCreateAtomicSwapViewModel(),
         ],
@@ -111,9 +120,8 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
     );
   }
 
-  Column _getInputFields() {
+  Column _getMandatoryInputFields() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AddressesDropdown(
           _selectedSelfAddress,
@@ -121,6 +129,33 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
             _selectedSelfAddress = address;
             sl.get<BalanceBloc>().getBalanceForAllAddresses();
           }),
+        ),
+        kVerticalSpacing,
+        InputField(
+          onChanged: (value) {
+            setState(() {});
+          },
+          validator: (value) => InputValidators.checkAddress(value),
+          controller: _recipientController,
+          suffixIcon: RawMaterialButton(
+            child: const Icon(
+              Icons.content_paste,
+              color: AppColors.darkHintTextColor,
+              size: 15.0,
+            ),
+            shape: const CircleBorder(),
+            onPressed: () {
+              ClipboardUtils.pasteToClipboard(context, (String value) {
+                _recipientController.text = value;
+                setState(() {});
+              });
+            },
+          ),
+          suffixIconConstraints: const BoxConstraints(
+            maxWidth: 45.0,
+            maxHeight: 20.0,
+          ),
+          hintText: 'Recipient address',
         ),
         kVerticalSpacing,
         StreamBuilder<Map<String, AccountInfo>?>(
@@ -136,7 +171,7 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
                 onChanged: (token, isValid) {
                   setState(() {
                     _selectedToken = token;
-                    _amountIsValid = isValid;
+                    _isAmountValid = isValid;
                   });
                 },
               );
@@ -147,158 +182,112 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
             return const SyriusLoadingWidget();
           },
         ),
-        kVerticalSpacing,
-        Form(
-          key: _recipientKey,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          child: InputField(
-            onChanged: (value) {
-              setState(() {});
-            },
-            validator: (value) => InputValidators.checkAddress(value),
-            controller: _recipientController,
-            suffixIcon: RawMaterialButton(
-              child: const Icon(
-                Icons.content_paste,
-                color: AppColors.darkHintTextColor,
-                size: 15.0,
-              ),
-              shape: const CircleBorder(),
-              onPressed: () {
-                ClipboardUtils.pasteToClipboard(context, (String value) {
-                  _recipientController.text = value;
-                  setState(() {});
-                });
-              },
-            ),
-            suffixIconConstraints: const BoxConstraints(
-              maxWidth: 45.0,
-              maxHeight: 20.0,
-            ),
-            hintText: 'Recipient address (counterparty)',
-          ),
-        ),
-        kVerticalSpacing,
-        LockDurationDropdown(
-          _selectedLockDuration,
-          (duration) => setState(() {
-            _selectedLockDuration =
-                (duration != null) ? duration : kLockDurations[1];
-          }),
-        ),
-        kVerticalSpacing,
-        HashTypeDropdown(
-          _selectedHashType,
-          (hashType) => setState(() {
-            _selectedHashType =
-                (hashType != null) ? hashType : kHashTypes.first;
-            _onGeneratePressed(_selectedHashType, context, (String value) {
-              _hashlockController.text = value;
-              setState(() {});
-            });
-          }),
-        ),
-        kVerticalSpacing,
-        Form(
-          key: _hashlockKey,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          child: InputField(
-            onChanged: (value) {
-              setState(() {});
-            },
-            validator: (value) => InputValidators.checkHash(value),
-            controller: _hashlockController,
-            suffixIcon: _getHashlockSuffix(),
-            suffixIconConstraints: const BoxConstraints(),
-            hintText: 'Hashlock',
-          ),
-        ),
       ],
     );
   }
 
-  Widget _generatePreimageBox() {
-    return Row(children: [
-      Flexible(
-        fit: FlexFit.tight,
-        child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-              border: Border.all(
-                  color: Theme.of(context).colorScheme.tertiaryContainer,
-                  style: BorderStyle.solid),
-              borderRadius: BorderRadius.circular(7.5),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(15.0),
-                  child: Text(
-                      'Copy and save this secret. You will need it to unlock the counter deposit.',
-                      style: Theme.of(context).textTheme.subtitle1,
-                      textScaleFactor: 1.2),
-                ),
-                Padding(
-                    padding: const EdgeInsets.only(bottom: 15.0, left: 15.0),
-                    child: Row(children: [
-                      Text(
-                        FormatUtils.formatLongString(
-                            FormatUtils.encodeHexString(_preimage)),
-                        style: Theme.of(context).textTheme.bodyText2,
-                        textScaleFactor: 1.2,
-                      ),
-                      CopyToClipboardIcon(
-                        FormatUtils.encodeHexString(_preimage),
-                        iconColor: AppColors.darkHintTextColor,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    ]))
-              ],
-            )),
-      )
-    ]);
-  }
-
-  Widget _getHashlockSuffix() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      mainAxisSize: MainAxisSize.min,
+  Widget _getAdvancedOptions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        HashlockSuffixGenerateWidget(
-          onPressed: () => {
-            _onGeneratePressed(_selectedHashType, context, (String value) {
-              _hashlockController.text = value;
-              setState(() {});
-            })
+        InkWell(
+          borderRadius: BorderRadius.circular(4),
+          hoverColor: Colors.transparent,
+          onTap: () {
+            setState(() {
+              _isAdvancedOptionsExpanded = !_isAdvancedOptionsExpanded;
+              _isAdvancedOptionsExpanded
+                  ? _animationController.forward()
+                  : _animationController.reverse();
+            });
           },
-          context: context,
+          child: SizedBox(
+            height: 30.0,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Advanced options',
+                  style: Theme.of(context).textTheme.subtitle1,
+                ),
+                const SizedBox(
+                  width: 3.0,
+                ),
+                RotationTransition(
+                  turns:
+                      Tween(begin: 0.0, end: 0.5).animate(_animationController),
+                  child: const Icon(Icons.keyboard_arrow_down, size: 18.0),
+                ),
+              ],
+            ),
+          ),
         ),
-        HashlockSuffixClipboardWidget(
-          onPressed: () => {
-            ClipboardUtils.pasteToClipboard(context, (String value) {
-              _hashlockController.text = value;
-              _preimage = [];
-              setState(() {});
-            })
-          },
-          context: context,
+        AnimatedSize(
+          duration: _animationDuration,
+          curve: Curves.easeInOut,
+          child: Visibility(
+            visible: _isAdvancedOptionsExpanded,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                kVerticalSpacing,
+                BasicDropdown<int>(
+                  'Lock duration',
+                  _selectedLockDuration,
+                  _lockDurationItems,
+                  (duration) => setState(() {
+                    if (duration != null) {
+                      _selectedLockDuration = duration;
+                    }
+                  }),
+                ),
+                kVerticalSpacing,
+                BasicDropdown<int>(
+                  'Hash type',
+                  _selectedHashType,
+                  _hashTypeItems,
+                  (hashType) => setState(() {
+                    if (hashType != null) {
+                      _selectedHashType = hashType;
+                    }
+                  }),
+                ),
+                kVerticalSpacing,
+                InputField(
+                  onChanged: (value) {
+                    setState(() {});
+                  },
+                  validator: (value) => InputValidators.checkHash(value),
+                  controller: _hashlockController,
+                  suffixIcon: RawMaterialButton(
+                    child: const Icon(
+                      Icons.content_paste,
+                      color: AppColors.darkHintTextColor,
+                      size: 15.0,
+                    ),
+                    shape: const CircleBorder(),
+                    onPressed: () {
+                      ClipboardUtils.pasteToClipboard(context, (String value) {
+                        _recipientController.text = value;
+                        setState(() {});
+                      });
+                    },
+                  ),
+                  suffixIconConstraints: const BoxConstraints(
+                    maxWidth: 45.0,
+                    maxHeight: 20.0,
+                  ),
+                  hintText: 'Pre-existing hashlock',
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
   }
 
-  void _onGeneratePressed(
-      String? hashType, BuildContext context, Function(String) callback) async {
-    _preimage = generatePreimage();
-    String hash = (hashType == kHashTypes[1])
-        ? Hash.fromBytes(await Crypto.sha256Bytes(_preimage)).toString()
-        : Hash.digest(_preimage).toString();
-
-    callback(hash);
-  }
-
-  Widget _getCreateAtomicSwapViewModel() {
+  _getCreateAtomicSwapViewModel() {
     return ViewModelBuilder<CreateHtlcBloc>.reactive(
       onModelReady: (model) {
         model.stream.listen(
@@ -307,15 +296,18 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
               _sendConfirmationNotification();
               setState(() {
                 _createAtomicSwapButtonKey.currentState?.animateReverse();
+                _recipientController = TextEditingController();
+                _amountController = TextEditingController();
+                _hashlockController = TextEditingController();
+                _selectedLockDuration = null;
+                _selectedHashType = null;
               });
             }
           },
           onError: (error) {
             //TODO: remove pending swap?
             _sendErrorNotification(error);
-            setState(() {
-              _createAtomicSwapButtonKey.currentState?.animateReverse();
-            });
+            _createAtomicSwapButtonKey.currentState?.animateReverse();
           },
         );
       },
@@ -326,26 +318,38 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
 
   Widget _getCreateAtomicSwapButton(CreateHtlcBloc model) {
     return LoadingButton.stepper(
-      onPressed: (_isInputValid())
-          ? () {
-              _onCreateButtonPressed(model);
-            }
-          : null,
+      onPressed: _isInputValid() ? () => _onCreateButtonPressed(model) : null,
       text: 'Create Atomic Swap',
       key: _createAtomicSwapButtonKey,
     );
   }
 
   void _onCreateButtonPressed(CreateHtlcBloc model) async {
-    final json = '{"id": "${'0' * Hash.length * 2}",'
-        '"timeLocked": "$_selectedSelfAddress",'
-        '"hashLocked": "${Address.parse(_recipientController.text)}",'
-        '"tokenStandard": "${_selectedToken.tokenStandard}",'
-        '"amount": ${_amountController.text.toNum().extractDecimals(_selectedToken.decimals)},'
-        '"expirationTime": ${await _getExpirationTime(_selectedLockDuration!)},'
-        '"hashType": ${(_selectedHashType == kHashTypes.first) ? 0 : 1},'
-        '"keyMaxSize": ${_hashlockController.text.length},'
-        '"hashLock": "${base64.encode((Hash.parse(_hashlockController.text).getBytes())!)}"}';
+    late final Hash hashLock;
+    List<int>? preimage;
+
+    if (_hashlockController.text.isEmpty) {
+      preimage = _generatePreimage();
+      hashLock =
+          (_selectedHashType?.value ?? htlcHashTypeSha3) == htlcHashTypeSha3
+              ? Hash.digest(preimage)
+              : Hash.fromBytes(await Crypto.sha256Bytes(preimage));
+    } else {
+      hashLock = Hash.parse(_hashlockController.text);
+    }
+
+    final newHtlc = HtlcInfo(
+        id: Hash.parse('0' * Hash.length * 2),
+        timeLocked: Address.parse(_selectedSelfAddress!),
+        hashLocked: Address.parse(_recipientController.text),
+        tokenStandard: _selectedToken.tokenStandard,
+        amount: _amountController.text
+            .toNum()
+            .extractDecimals(_selectedToken.decimals),
+        expirationTime: await _getExpirationTime(),
+        hashType: _selectedHashType?.value ?? 0,
+        keyMaxSize: 255,
+        hashLock: hashLock.getBytes()!);
 
     final TextEditingController _secretController = TextEditingController();
     final GlobalKey<FormState> _secretKey = GlobalKey();
@@ -353,63 +357,51 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
     showDepositDialog(
       context: context,
       title: 'Create Swap',
-      htlc: HtlcInfo.fromJson(jsonDecode(json)),
+      htlc: newHtlc,
       token: _selectedToken,
       controller: _secretController,
       key: _secretKey,
-      preimage: _preimage,
-      onCreateButtonPressed: () async {
+      preimage: preimage,
+      onCreateButtonPressed: () {
+        _createAtomicSwapButtonKey.currentState?.animateForward();
         sl.get<ActiveSwapsWorker>().addPendingSwap(
-              json: json,
-              preimage: _preimage,
+              htlc: newHtlc,
+              preimage: preimage,
             );
-        _sendCreateHtlcBlock(model);
+        model.createHtlc(
+          timeLocked: newHtlc.timeLocked,
+          token: _selectedToken,
+          amount: _amountController.text,
+          hashLocked: newHtlc.hashLocked,
+          expirationTime: newHtlc.expirationTime,
+          hashType: newHtlc.hashType,
+          keyMaxSize: newHtlc.keyMaxSize,
+          hashLock: newHtlc.hashLock,
+        );
         Navigator.pop(context);
       },
     );
   }
 
-  void _sendCreateHtlcBlock(CreateHtlcBloc model) async {
-    _createAtomicSwapButtonKey.currentState?.animateForward();
-    model.createHtlc(
-      timeLocked: Address.parse(_selectedSelfAddress!),
-      token: _selectedToken,
-      amount: _amountController.text,
-      hashLocked: Address.parse(_recipientController.text),
-      expirationTime: _expirationTime!,
-      hashType: (_selectedHashType == kHashTypes.first) ? 0 : 1,
-      keyMaxSize: _hashlockController.text.length,
-      hashLock: (Hash.parse(_hashlockController.text).getBytes())!,
-    );
-  }
-
-  List<int> generatePreimage([int length = htlcPreimageDefaultLength]) {
+  List<int> _generatePreimage([int length = htlcPreimageDefaultLength]) {
     const maxInt = 256;
     return List<int>.generate(length, (i) => Random.secure().nextInt(maxInt));
   }
 
-  Future<int> _getExpirationTime(String lockDuration) async {
-    int currentTime = (await zenon!.ledger.getFrontierMomentum()).timestamp;
-    int expirationTime = 0;
-
-    switch (lockDuration) {
-      case '3 hours':
-        expirationTime = kOneHourInSeconds * 3;
-        break;
-      case '24 hours':
-        expirationTime = kOneHourInSeconds * 24;
-        break;
-      default:
-        expirationTime = kOneHourInSeconds * 12;
-    }
-    _expirationTime = expirationTime + currentTime;
-    return _expirationTime!;
+  Future<int> _getExpirationTime() async {
+    final currentTime = (await zenon!.ledger.getFrontierMomentum()).timestamp;
+    const defaultDuration = kOneHourInSeconds * 12;
+    return _selectedLockDuration != null
+        ? _selectedLockDuration!.value + currentTime
+        : defaultDuration + currentTime;
   }
 
   bool _isInputValid() =>
-      _amountIsValid &&
+      _isAmountValid &&
       InputValidators.checkAddress(_recipientController.text) == null &&
-      InputValidators.checkHash(_hashlockController.text) == null;
+      (_hashlockController.text.isEmpty ||
+          (_hashlockController.text.isNotEmpty &&
+              InputValidators.checkHash(_hashlockController.text) == null));
 
   void _sendConfirmationNotification() {
     sl.get<NotificationsBloc>().addNotification(
@@ -437,7 +429,6 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard> {
   void dispose() {
     _recipientController.dispose();
     _amountController.dispose();
-    _evmAddressController.dispose();
     _hashlockController.dispose();
     super.dispose();
   }
