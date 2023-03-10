@@ -31,8 +31,7 @@ class NodeUtils {
         await zenon!.ledger.getFrontierMomentum().then((value) {
           netId = value.chainIdentifier.toInt();
         });
-      }
-      catch (e) {
+      } catch (e) {
         rethrow;
       }
     }
@@ -104,7 +103,6 @@ class NodeUtils {
       Future.delayed(const Duration(seconds: 30))
           .then((value) => NotificationUtils.sendNodeSyncingNotification());
       _initListenForUnreceivedAccountBlocks(allResponseBroadcaster);
-      _initListenForHtlcAccountBlocks(allResponseBroadcaster);
     });
   }
 
@@ -159,25 +157,6 @@ class NodeUtils {
           }
         }
       },
-    );
-  }
-
-  static void _initListenForHtlcAccountBlocks(Stream broadcaster) {
-    broadcaster.listen(
-            (event) {
-          if (event!["method"] == "ledger.subscription") {
-            for (var i = 0; i < event["params"]["result"].length; i += 1) {
-              var tx = event["params"]["result"][i];
-              if (tx["toAddress"] != htlcAddress.toString()) {
-                continue;
-              } else {
-                var hash = tx["hash"];
-                //sl<ActiveSwapsWorker>().addHash(Hash.parse(hash));
-                sl<ActiveSwapsWorker>().parseHtlcContractBlocks();
-              }
-            }
-          }
-        }
     );
   }
 

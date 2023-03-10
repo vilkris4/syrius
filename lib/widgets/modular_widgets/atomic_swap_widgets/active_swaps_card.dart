@@ -42,23 +42,6 @@ class ActiveSwapsCard extends StatefulWidget {
 
 class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
   final ScrollController _scrollController = ScrollController();
-  final TextEditingController _searchKeyWordController =
-      TextEditingController();
-  final StreamController<String> _textChangeStreamController =
-      StreamController();
-  late StreamSubscription _textChangesSubscription;
-
-  final _onSearchInputChangedSubject = BehaviorSubject<String?>.seeded(null);
-
-  Sink<String?> get onRefreshResultsRequest =>
-      _onSearchInputChangedSubject.sink;
-
-  String? get searchInputTerm => _onSearchInputChangedSubject.value;
-
-  final _onNewListingStateController =
-      BehaviorSubject<InfiniteScrollBlocListingState<HtlcInfo>>.seeded(
-    InfiniteScrollBlocListingState<HtlcInfo>(),
-  );
 
   final StreamController<List<HtlcInfo>> _streamController =
       StreamController<List<HtlcInfo>>.broadcast();
@@ -67,34 +50,13 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
   Stream<List<HtlcInfo>> get dataStream => _streamController.stream;
   StreamSink<List<HtlcInfo>> get dataSink => _streamController.sink;
 
-  final List<ActiveSwapsFilterTag> selectedActiveSwapsFilterTag = [];
-
-  List<HtlcInfo>? _activewapList;
-  List<HtlcInfo> _filteredSwapList = [];
-
-  bool _retrieveHtlc = false;
-  bool _sortAscending = true;
-
   @override
   void initState() {
     super.initState();
     streamController.stream.listen((event) {
       setState(() {
-        _filteredSwapList = event;
+        //_filteredSwapList = event;
       });
-    });
-
-    _onSearchInputChangedSubject.stream
-        .flatMap((_) => _doRefreshResults())
-        .listen(_onNewListingStateController.add);
-
-    _textChangesSubscription = _textChangeStreamController.stream
-        .debounceTime(
-          const Duration(milliseconds: 100),
-        )
-        .distinct()
-        .listen((text) {
-      onRefreshResultsRequest.add(text);
     });
   }
 
@@ -104,34 +66,15 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
         return;
       } else {
         setState(() {
-          _activewapList = sl.get<ActiveSwapsWorker>().cachedSwaps;
+          //_activewapList = sl.get<ActiveSwapsWorker>().cachedSwaps;
         });
       }
     });
 
-    if (_activewapList != null) {
-      _filteredSwapList = _activewapList!;
-      if (searchInputTerm != null && (searchInputTerm?.isNotEmpty)!) {
-        _filteredSwapList = await _filterActiveSwapsBySearchTerm(
-            _filteredSwapList, searchInputTerm!);
-
-        if (_filteredSwapList.isEmpty &&
-            InputValidators.checkHash(searchInputTerm) == null) {
-          sc.add(await _swapLookupByHash(searchInputTerm!));
-          return;
-        }
-      }
-      _retrieveHtlc = false;
-      _filteredSwapList = await _filterActiveSwapsByTags(_filteredSwapList);
-
-      _sortAscending
-          ? _filteredSwapList
-              .sort((a, b) => a.expirationTime.compareTo(b.expirationTime))
-          : _filteredSwapList
-              .sort((a, b) => b.expirationTime.compareTo(a.expirationTime));
-
-      sc.add(_filteredSwapList);
-    }
+    //if (_activewapList != null) {
+    //_filteredSwapList = _activewapList!;
+    //sc.add(_filteredSwapList);
+    // }
   }
 
   @override
@@ -139,34 +82,26 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
     return CardScaffold(
         title: ' Active Swaps',
         childBuilder: () => FutureBuilder<List<HtlcInfo>>(
-              future: sl.get<ActiveSwapsWorker>().parseHtlcContractBlocks(),
+              future: sl.get<ActiveSwapsWorker>().getSavedSwaps(),
               builder: (context, snapshot) {
-                if (snapshot.hasData &&
-                    !snapshot.hasError &&
-                    sl.get<ActiveSwapsWorker>().synced == true) {
-                  _activewapList = snapshot.data!;
-                  _filteredSwapList = _activewapList!;
+                if (snapshot.hasData && !snapshot.hasError) {
+                  // _activewapList = snapshot.data!;
+                  // _filteredSwapList = _activewapList!;
                   return _getActiveSwapsList();
                 } else if (snapshot.hasError) {
                   return const SyriusLoadingWidget();
                 }
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    SyriusLoadingWidget(),
-                    Text('Syncing swap history. Please wait...'),
-                  ],
-                );
+                return const SyriusLoadingWidget();
               },
             ),
         onRefreshPressed: () {
-          _searchKeyWordController.clear();
-          refreshResults();
+          //_searchKeyWordController.clear();
+          //refreshResults();
+          print("refresh??");
         },
+        //TODO: Update description
         description: 'This card displays a list of all active atomic swaps.\n '
-            'The list can be sorted by expiration time and filtered by type of '
-            'swap (incoming, outgoing, in progress, expired, hash) or with a '
-            'search query. Once a swap has been reclaimed or unlocked, it will '
+            'Once a swap has been reclaimed or unlocked, it will '
             'be removed from the list. ');
   }
 
@@ -175,35 +110,17 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
       padding: const EdgeInsets.all(15.0),
       child: Column(
         children: [
-          _getSearchInputField(),
-          kVerticalSpacing,
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _getActiveSwapsFilterTags(),
-              InkWell(
-                onTap: _sortActiveSwapsByExpirationTime,
-                child: Icon(
-                  Entypo.select_arrows,
-                  size: 15.0,
-                  color: Theme.of(context).iconTheme.color,
-                ),
-              ),
-            ],
-          ),
-          kVerticalSpacing,
           Expanded(
             child: Scrollbar(
               controller: _scrollController,
               child: StreamBuilder<List<HtlcInfo>>(
-                initialData: _activewapList,
+                initialData: sl.get<ActiveSwapsWorker>().cachedSwaps,
                 stream: streamController.stream,
                 builder: (_, snapshot) {
                   if (snapshot.hasError) {
                     return SyriusErrorWidget(snapshot.error!);
                   }
-                  if ((snapshot.data?.length)! > 0 &&
-                      sl.get<ActiveSwapsWorker>().synced == true) {
+                  if ((snapshot.data?.length)! > 0) {
                     return ListView.separated(
                         controller: _scrollController,
                         cacheExtent: 10000,
@@ -223,20 +140,7 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
                           );
                         });
                   } else {
-                    if (!sl.get<ActiveSwapsWorker>().synced) {
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          SyriusLoadingWidget(),
-                          Text('Syncing swap history. Please wait...'),
-                        ],
-                      );
-                    }
-                    if (_searchKeyWordController.text.isNotEmpty) {
-                      return const SyriusErrorWidget('No results found');
-                    } else {
-                      return const SyriusErrorWidget('No active swaps');
-                    }
+                    return const SyriusErrorWidget('No active swaps');
                   }
                 },
               ),
@@ -247,187 +151,8 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
     );
   }
 
-  Widget _getSearchInputField() {
-    return InputField(
-      controller: _searchKeyWordController,
-      hintText: 'Search by Deposit ID, Hashlock, or Address',
-      suffixIcon: const Icon(
-        Icons.search,
-        color: Colors.green,
-      ),
-      onChanged: _textChangeStreamController.add,
-    );
-  }
-
-  _getActiveSwapsFilterTags() {
-    List<TagWidget> children = [];
-    for (var tag in ActiveSwapsFilterTag.values) {
-      (!_retrieveHtlc)
-          ? children.add(_getActiveSwapsFilterTag(tag, true))
-          : children.add(_getActiveSwapsFilterTag(tag, false));
-    }
-
-    return Row(
-      children: children,
-    );
-  }
-
-  _getActiveSwapsFilterTag(ActiveSwapsFilterTag filterTag, bool _enabled) {
-    return TagWidget(
-      text: (filterTag != ActiveSwapsFilterTag.sha256)
-          ? FormatUtils.extractNameFromEnum<ActiveSwapsFilterTag>(filterTag)
-          : 'SHA-256',
-      hexColorCode: Theme.of(context)
-          .colorScheme
-          .primaryContainer
-          .value
-          .toRadixString(16)
-          .substring(2),
-      textColor: (_enabled)
-          ? Colors.white
-          : Theme.of(context).colorScheme.tertiaryContainer,
-      iconData: (selectedActiveSwapsFilterTag.contains(filterTag) && _enabled)
-          ? Icons.check_rounded
-          : null,
-      onPressed: () {
-        if (_enabled) {
-          setState(() {
-            if (selectedActiveSwapsFilterTag.contains(filterTag)) {
-              selectedActiveSwapsFilterTag.remove(filterTag);
-            } else {
-              selectedActiveSwapsFilterTag.add(filterTag);
-            }
-            refreshResultsWithData();
-          });
-        }
-      },
-    );
-  }
-
-  Future<List<HtlcInfo>> _swapLookupByHash(String hashId) async {
-    try {
-      AccountBlock _block =
-          (await zenon!.ledger.getAccountBlockByHash(Hash.parse(hashId)))!;
-      Function eq = const ListEquality().equals;
-      AbiFunction? f;
-      for (var entry in Definitions.htlc.entries) {
-        if (eq(AbiFunction.extractSignature(entry.encodeSignature()),
-            AbiFunction.extractSignature(_block.data))) {
-          f = AbiFunction(entry.name!, entry.inputs!);
-          if (f.name == 'Create') {
-            _retrieveHtlc = true;
-            var data = f.decode(_block.data);
-            final json = '{"id": "${_block.hash}",'
-                '"timeLocked": "${_block.address}",'
-                '"hashLocked": "${data[0]}",'
-                '"tokenStandard": "${_block.tokenStandard}",'
-                '"amount": ${_block.amount},'
-                '"expirationTime": ${data[1]},'
-                '"hashType": ${data[2]},'
-                '"keyMaxSize": ${data[3]},'
-                '"hashLock": "${base64.encode(data[4])}"}';
-            return [HtlcInfo.fromJson(jsonDecode(json))];
-          }
-        }
-      }
-    } catch (e) {
-      return [];
-    }
-
-    return [];
-  }
-
-  void refreshResults() {
-    if (!_onSearchInputChangedSubject.isClosed) {
-      onRefreshResultsRequest.add(null);
-    }
-  }
-
-  void refreshResultsWithData() {
-    if (!_onSearchInputChangedSubject.isClosed) {
-      onRefreshResultsRequest.add(searchInputTerm);
-    }
-  }
-
-  Stream<InfiniteScrollBlocListingState<HtlcInfo>> _doRefreshResults() async* {
-    yield InfiniteScrollBlocListingState<HtlcInfo>();
-    _updateList(streamController);
-  }
-
-  Future<List<HtlcInfo>> _filterActiveSwapsBySearchTerm(
-      List<HtlcInfo> _activeSwaps, String searchTerm) async {
-    List<HtlcInfo> _filteredSwaps = [];
-
-    if (Address.isValid(searchTerm)) {
-      for (var htlc in _activeSwaps) {
-        if (htlc.hashLocked.equals(Address.parse(searchTerm)) ||
-            htlc.timeLocked.equals(Address.parse(searchTerm))) {
-          _filteredSwaps.add(htlc);
-        }
-      }
-    }
-    if (InputValidators.checkHash(searchTerm) == null) {
-      for (var htlc in _activeSwaps) {
-        if (htlc.id.equals(Hash.parse(searchTerm)) ||
-            Hash.fromBytes(htlc.hashLock).equals(Hash.parse(searchTerm))) {
-          _filteredSwaps.add(htlc);
-        }
-      }
-    }
-    return _filteredSwaps;
-  }
-
-  Future<List<HtlcInfo>> _filterActiveSwapsByTags(
-      List<HtlcInfo> _activeSwaps) async {
-    if (selectedActiveSwapsFilterTag.isNotEmpty) {
-      int _currentTime =
-          ((DateTime.now().millisecondsSinceEpoch) / 1000).floor();
-
-      if (selectedActiveSwapsFilterTag
-          .contains(ActiveSwapsFilterTag.outgoing)) {
-        _activeSwaps = _activeSwaps
-            .where((swap) =>
-                kDefaultAddressList.contains(swap.timeLocked.toString()))
-            .toList();
-      }
-      if (selectedActiveSwapsFilterTag
-          .contains(ActiveSwapsFilterTag.incoming)) {
-        _activeSwaps = _activeSwaps
-            .where((swap) =>
-                kDefaultAddressList.contains(swap.hashLocked.toString()))
-            .toList();
-      }
-      if (selectedActiveSwapsFilterTag
-          .contains(ActiveSwapsFilterTag.inProgress)) {
-        _activeSwaps = _activeSwaps
-            .where((swap) => swap.expirationTime >= _currentTime)
-            .toList();
-      }
-      if (selectedActiveSwapsFilterTag.contains(ActiveSwapsFilterTag.expired)) {
-        _activeSwaps = _activeSwaps
-            .where((swap) => swap.expirationTime < _currentTime)
-            .toList();
-      }
-      if (selectedActiveSwapsFilterTag.contains(ActiveSwapsFilterTag.sha256)) {
-        _activeSwaps =
-            _activeSwaps.where((swap) => swap.hashType == 1).toList();
-      }
-    }
-    return _activeSwaps;
-  }
-
-  void _sortActiveSwapsByExpirationTime() {
-    setState(() {
-      _sortAscending = !_sortAscending;
-    });
-    _updateList(streamController);
-  }
-
   @override
   void dispose() {
-    _textChangesSubscription.cancel();
-    _searchKeyWordController.dispose();
-    _textChangeStreamController.done;
     _scrollController.dispose();
     super.dispose();
   }

@@ -305,7 +305,8 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
             }
           },
           onError: (error) {
-            //TODO: remove pending swap?
+            //TODO: remove pending swap
+            //Example: create a swap with a net id that doesn't match the node
             _sendErrorNotification(error);
             _createAtomicSwapButtonKey.currentState?.animateReverse();
           },

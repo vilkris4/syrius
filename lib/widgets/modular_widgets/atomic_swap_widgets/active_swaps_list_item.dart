@@ -71,8 +71,6 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
           Stream.periodic(const Duration(seconds: 1)).listen((_) {
         if (!_isSwapInProgress()) {
           _expirationSubscription?.cancel();
-          // NOTE (vilkris): Is this necessary?
-          // sl.get<ActiveSwapsWorker>().removeSwap(widget.htlcInfo!.id);
           setState(() {});
         }
       });
@@ -579,7 +577,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
   String _getPreimage() {
     final activeSwapsBox = Hive.box(kHtlcActiveSwapsBox);
     List createdSwapsList = activeSwapsBox.get(
-          kHtlcCreatedSwapsKey,
+          kHtlcActiveSwapsKey,
           defaultValue: [],
         ) ??
         [];

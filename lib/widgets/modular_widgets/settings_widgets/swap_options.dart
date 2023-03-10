@@ -60,7 +60,7 @@ class _SwapOptionsState extends State<SwapOptions> {
 
   Widget _getAtomicUnlocksButton() {
     bool currentSetting = sharedPrefsService!.get(
-      kHtlcAtomicUnlocksKey,
+      kHtlcAtomicUnlockKey,
       defaultValue: true,
     );
     String buttonText = currentSetting ? 'Disable' : 'Enable';
@@ -83,7 +83,7 @@ class _SwapOptionsState extends State<SwapOptions> {
     try {
       _atomicUnlocksButtonKey.currentState!.animateForward();
       sharedPrefsService!.put(
-        kHtlcAtomicUnlocksKey,
+        kHtlcAtomicUnlockKey,
         !currentSetting,
       );
       String message =

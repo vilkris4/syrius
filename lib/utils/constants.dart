@@ -82,10 +82,8 @@ const String kWindowSizeHeightKey = 'window_size_height_key';
 const String kWindowPositionXKey = 'window_position_x_key';
 const String kWindowPositionYKey = 'window_position_y_key';
 const String kWindowMaximizedKey = 'window_maximized_key';
-const String kHtlcCreatedSwapsKey = 'htlc_created_swaps_key';
-const String kHtlcDiscoveredSwapsKey = 'htlc_discovered_swaps_key';
-const String kHltcLastCheckpointKey = 'htlc_last_checkpoint_key';
-const String kHtlcAtomicUnlocksKey = 'htlc_atomic_unlocks_key';
+const String kHtlcActiveSwapsKey = 'htlc_active_swaps_key';
+const String kHtlcAtomicUnlockKey = 'htlc_atomic_unlock_key';
 const String kHtlcAutoReclaimKey = 'htlc_auto_reclaim_key';
 
 const double kDefaultBorderOutlineWidth = 1.0;
