@@ -5,7 +5,7 @@ import 'dart:isolate';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:wakelock/wakelock.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/active_swaps_worker.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/auto_receive_tx_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/notifications_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/embedded_node/embedded_node.dart';

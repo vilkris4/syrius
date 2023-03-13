@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:provider/provider.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/active_swaps_worker.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/auto_receive_tx_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/lock_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/node_sync_status_bloc.dart';
@@ -24,7 +24,7 @@ import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/layout_scaf
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/loading_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/notification_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/accelerator_tab_child.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/atomic_swap_tab_child.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/p2p_swap_tab_child.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/bridge_tab_child.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/dashboard_tab_child.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/tab_children_widgets/help_tab_child.dart';
@@ -51,7 +51,7 @@ enum Tabs {
   staking,
   plasma,
   tokens,
-  atomicSwap,
+  p2pSwap,
   resyncWallet,
   bridge,
   accelerator,
@@ -280,6 +280,7 @@ class _MainAppContainerState extends State<MainAppContainer>
     return _getTextTabs() + _getIconTabs();
   }
 
+  //TODO: add 'P2P Swap' exception here or leave it in .toTitleCase()
   List<Tab> _getTextTabs() {
     return kTabsWithTextTitles
         .map<Tab>(
@@ -454,7 +455,7 @@ class _MainAppContainerState extends State<MainAppContainer>
           onStepperNotificationSeeMorePressed: () =>
               _navigateTo(Tabs.notifications),
         ),
-        AtomicSwapTabChild(
+        P2pSwapTabChild(
           onStepperNotificationSeeMorePressed: () =>
               _navigateTo(Tabs.notifications),
         ),
@@ -532,7 +533,7 @@ class _MainAppContainerState extends State<MainAppContainer>
   }
 
   void _listenToActiveSwapsWorkerNotifications() {
-    sl<ActiveSwapsWorker>().stream.listen((event) {
+    sl<P2pSwapsWorker>().stream.listen((event) {
       sl<NotificationsBloc>().addNotification(event);
     });
   }

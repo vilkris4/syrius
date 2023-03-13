@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/active_swaps_worker.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/address_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/clipboard_utils.dart';
@@ -15,7 +15,7 @@ import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/info_item_w
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/loading_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/input_field.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/scan_secret_suffix_widgets.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs/swap_dialogs/dialog_info_item_widget.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs/swap_dialogs/old/dialog_info_item_widget.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
 showUnlockDialog({
@@ -169,7 +169,7 @@ showUnlockDialog({
                                                 scanning = true;
                                               });
                                               searchSecretStream = sl
-                                                  .get<ActiveSwapsWorker>()
+                                                  .get<P2pSwapsWorker>()
                                                   .scanForSecret(htlc.id)
                                                   .asStream()
                                                   .listen(

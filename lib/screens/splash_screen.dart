@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:lottie/lottie.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/active_swaps_worker.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/notifications_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
 import 'package:zenon_syrius_wallet_flutter/model/navigation_arguments.dart';
@@ -104,7 +104,7 @@ class _SplashScreenState extends State<SplashScreen>
     // In case the notification was not dismissed, we add a null value to be ignored
     // after the user creates or imports a new wallet
     kWalletInitCompleted = false;
-    sl.get<ActiveSwapsWorker>().dispose();
+    sl.get<P2pSwapsWorker>().dispose();
     await sl.get<NotificationsBloc>().addNotification(null);
     await _deleteKeyStoreFile();
     await Hive.deleteFromDisk();

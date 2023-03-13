@@ -8,7 +8,7 @@ import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:hive/hive.dart';
 import 'package:stacked/stacked.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/active_swaps_worker.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/htlc/create_htlc_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/htlc/reclaim_htlc_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/htlc/unlock_htlc_bloc.dart';
@@ -18,28 +18,28 @@ import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/extensions.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/format_utils.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs/swap_dialogs/deposit_dialog.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs/swap_dialogs/unlock_dialog.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs/swap_dialogs/old/deposit_dialog.dart';
+//import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs/swap_dialogs/unlock_dialog.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/error_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/htlc_status_details.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/info_item_widget.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
-class ActiveSwapsListItem extends StatefulWidget {
+class P2pSwapsListItem extends StatefulWidget {
   final HtlcInfo? htlcInfo;
   final VoidCallback onStepperNotificationSeeMorePressed;
 
-  const ActiveSwapsListItem({
+  const P2pSwapsListItem({
     Key? key,
     required this.htlcInfo,
     required this.onStepperNotificationSeeMorePressed,
   }) : super(key: key);
 
   @override
-  _ActiveSwapsListItemState createState() => _ActiveSwapsListItemState();
+  _P2pSwapsListItemState createState() => _P2pSwapsListItemState();
 }
 
-class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
+class _P2pSwapsListItemState extends State<P2pSwapsListItem> {
   final TextEditingController _secretController = TextEditingController();
   final TextEditingController _depositAmountController =
       TextEditingController();
@@ -76,7 +76,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
       });
     } else {
       if (_isIncomingDeposit()) {
-        sl.get<ActiveSwapsWorker>().removeSwap(widget.htlcInfo!.id);
+        sl.get<P2pSwapsWorker>().removeSwap(widget.htlcInfo!.id);
       }
     }
 
@@ -95,7 +95,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
       _autoUnlockSubscription =
           Stream.periodic(const Duration(seconds: 1)).listen((_) {
         if (sl
-            .get<ActiveSwapsWorker>()
+            .get<P2pSwapsWorker>()
             .autoUnlockedSwaps
             .contains(widget.htlcInfo!.id)) {
           _autoUnlockSubscription?.cancel();
@@ -438,7 +438,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
             keyMaxSize: widget.htlcInfo!.keyMaxSize,
             hashLock: widget.htlcInfo!.hashLock);
 
-        await sl.get<ActiveSwapsWorker>().addPendingSwap(htlc: newHtlc);
+        await sl.get<P2pSwapsWorker>().addPendingSwap(htlc: newHtlc);
         setState(() {});
         Navigator.pop(context);
       },
@@ -511,6 +511,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
   }
 
   void _onUnlockButtonPressed(UnlockHtlcBloc model, Token token) {
+    /*
     showUnlockDialog(
       context: context,
       title: 'Unlock Deposit',
@@ -528,6 +529,7 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
         Navigator.pop(context);
       },
     );
+     */
   }
 
   void _unlockSwap(UnlockHtlcBloc model) {
@@ -568,16 +570,16 @@ class _ActiveSwapsListItemState extends State<ActiveSwapsListItem> {
     // A counter deposit can be made if the deposit is incoming and the incoming
     // deposit isn't a counter deposit made by the counterparty.
     return _isIncomingDeposit() &&
-        !sl.get<ActiveSwapsWorker>().cachedSwaps.any((e) =>
+        !sl.get<P2pSwapsWorker>().cachedSwaps.any((e) =>
             Hash.fromBytes(e.hashLock)
                 .equals(Hash.fromBytes(widget.htlcInfo!.hashLock)) &&
             e.id != widget.htlcInfo!.id);
   }
 
   String _getPreimage() {
-    final activeSwapsBox = Hive.box(kHtlcActiveSwapsBox);
+    final activeSwapsBox = Hive.box(kP2pSwapsBox);
     List createdSwapsList = activeSwapsBox.get(
-          kHtlcActiveSwapsKey,
+          kP2pSwapsKey,
           defaultValue: [],
         ) ??
         [];

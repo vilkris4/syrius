@@ -44,5 +44,8 @@ extension ZipTwoLists on List {
 }
 
 extension StringCasingExtension on String {
-  String toTitleCase() => replaceAll(RegExp(' +'), ' ').split(' ').map((str) => str.capitalize()).join(' ');
+  String toTitleCase() => replaceAll(RegExp(' +'), ' ')
+      .split(' ')
+      .map((str) => str == 'P2pswap' ? 'P2P Swap' : str.capitalize())
+      .join(' ');
 }

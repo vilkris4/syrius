@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/active_swaps_worker.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/dashboard/balance_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/htlc/create_htlc_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/notifications_bloc.dart';
@@ -18,7 +18,7 @@ import 'package:zenon_syrius_wallet_flutter/utils/input_validators.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/notification_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/zts_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/loading_button.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs/swap_dialogs/deposit_dialog.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs/swap_dialogs/old/deposit_dialog.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dropdown/addresses_dropdown.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dropdown/basic_dropdown.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/error_widget.dart';
@@ -28,16 +28,16 @@ import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/layout_scaf
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/loading_widget.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
-class CreateAtomicSwapCard extends StatefulWidget {
-  const CreateAtomicSwapCard({
+class SwapOptionsCard extends StatefulWidget {
+  const SwapOptionsCard({
     Key? key,
   }) : super(key: key);
 
   @override
-  State<CreateAtomicSwapCard> createState() => _CreateAtomicSwapCardState();
+  State<SwapOptionsCard> createState() => _SwapOptionsCardState();
 }
 
-class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
+class _SwapOptionsCardState extends State<SwapOptionsCard>
     with SingleTickerProviderStateMixin {
   final GlobalKey<LoadingButtonState> _createAtomicSwapButtonKey = GlobalKey();
 
@@ -82,25 +82,8 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
   @override
   Widget build(BuildContext context) {
     return CardScaffold(
-      title: '  Create Atomic Swap',
-      description: 'Create an atomic swap on the Zenon Network of Momentum.\n'
-          'This allows two parties to conduct a trade without the need for a '
-          'trusted third party.\n'
-          'An atomic swap is initiated when one party creates a swap destined '
-          'for another party. Before submitting the swap to the network, they '
-          'will generate a random 32-character secret. Users should treat this '
-          'like a password.\n'
-          'If the secret is lost, participants must wait until the swap has '
-          'expired in order to reclaim their funds.\n'
-          'The hashlock is derived from this secret and is used by both parties '
-          'to perform the atomic swap.\n'
-          'If two or more parties use the same hashlock, all active swaps using '
-          'the hashlock may be unlocked simultaneously. The recipient\'s '
-          'Syrius wallet will automatically unlock their funds if it is '
-          'connected to a synced node. Otherwise, a vigilant third party may '
-          'unlock the the swap on their behalf.\n'
-          'Every swap must be unlocked before its expiration time elapses in '
-          'order for the recipient to receive the funds.',
+      title: '  Create HTLC',
+      description: 'update this text',
       childBuilder: () => _getWidgetBody(context),
     );
   }
@@ -320,7 +303,7 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
   Widget _getCreateAtomicSwapButton(CreateHtlcBloc model) {
     return LoadingButton.stepper(
       onPressed: _isInputValid() ? () => _onCreateButtonPressed(model) : null,
-      text: 'Create Atomic Swap',
+      text: 'Create HTLC',
       key: _createAtomicSwapButtonKey,
     );
   }
@@ -357,7 +340,7 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
 
     showDepositDialog(
       context: context,
-      title: 'Create Swap',
+      title: 'Create HTLC',
       htlc: newHtlc,
       token: _selectedToken,
       controller: _secretController,
@@ -365,7 +348,7 @@ class _CreateAtomicSwapCardState extends State<CreateAtomicSwapCard>
       preimage: preimage,
       onCreateButtonPressed: () {
         _createAtomicSwapButtonKey.currentState?.animateForward();
-        sl.get<ActiveSwapsWorker>().addPendingSwap(
+        sl.get<P2pSwapsWorker>().addPendingSwap(
               htlc: newHtlc,
               preimage: preimage,
             );

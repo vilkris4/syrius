@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:layout/layout.dart';
 import 'package:provider/provider.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/notifiers/default_address_notifier.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/atomic_swap_widgets/create_atomic_swap_card.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/swap_widgets/p2p_swaps_card.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/swap_widgets/swap_options_card.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/layout_scaffold/standard_fluid_layout.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/atomic_swap_widgets/active_swaps_card.dart';
 
-class AtomicSwapTabChild extends StatelessWidget {
+// @vilkris - should we have an integer in the class name?
+class P2pSwapTabChild extends StatelessWidget {
   final VoidCallback onStepperNotificationSeeMorePressed;
 
-  const AtomicSwapTabChild({
+  const P2pSwapTabChild({
     required this.onStepperNotificationSeeMorePressed,
     Key? key,
   }) : super(key: key);
@@ -31,7 +32,7 @@ class AtomicSwapTabChild extends StatelessWidget {
             sm: kStaggeredNumOfColumns,
             xs: kStaggeredNumOfColumns,
           ),
-          child: const CreateAtomicSwapCard(),
+          child: const SwapOptionsCard(),
         ),
         FluidCell(
           height: kStaggeredNumOfColumns / 2,
@@ -43,11 +44,10 @@ class AtomicSwapTabChild extends StatelessWidget {
             xs: kStaggeredNumOfColumns,
           ),
           child: Consumer<SelectedAddressNotifier>(
-            builder: (_, __, ___) =>
-                ActiveSwapsCard(
-                  onStepperNotificationSeeMorePressed:
+            builder: (_, __, ___) => P2pSwapsCard(
+              onStepperNotificationSeeMorePressed:
                   onStepperNotificationSeeMorePressed,
-                ),
+            ),
           ),
         ),
       ],

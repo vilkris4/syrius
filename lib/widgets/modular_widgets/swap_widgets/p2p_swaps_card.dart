@@ -1,46 +1,27 @@
 import 'dart:async';
-import 'dart:convert';
 
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_vector_icons/flutter_vector_icons.dart';
-import 'package:rxdart/rxdart.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/active_swaps_worker.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/infinite_scroll_bloc.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
-import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
-import 'package:zenon_syrius_wallet_flutter/utils/format_utils.dart';
-import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
-import 'package:zenon_syrius_wallet_flutter/utils/input_validators.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/atomic_swap_widgets/active_swaps_list_item.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/swap_widgets/p2p_swaps_list_item.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/error_widget.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/input_field.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/layout_scaffold/card_scaffold.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/loading_widget.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/tag_widget.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
-enum ActiveSwapsFilterTag {
-  incoming,
-  outgoing,
-  inProgress,
-  expired,
-  sha256,
-}
-
-class ActiveSwapsCard extends StatefulWidget {
+class P2pSwapsCard extends StatefulWidget {
   final VoidCallback onStepperNotificationSeeMorePressed;
 
-  const ActiveSwapsCard({
+  const P2pSwapsCard({
     required this.onStepperNotificationSeeMorePressed,
     Key? key,
   }) : super(key: key);
 
   @override
-  _ActiveSwapsCardState createState() => _ActiveSwapsCardState();
+  _P2pSwapsCardState createState() => _P2pSwapsCardState();
 }
 
-class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
+class _P2pSwapsCardState extends State<P2pSwapsCard> {
   final ScrollController _scrollController = ScrollController();
 
   final StreamController<List<HtlcInfo>> _streamController =
@@ -60,29 +41,12 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
     });
   }
 
-  void _updateList(StreamController sc) async {
-    sl.get<ActiveSwapsWorker>().controller.stream.listen((event) {
-      if (!mounted) {
-        return;
-      } else {
-        setState(() {
-          //_activewapList = sl.get<ActiveSwapsWorker>().cachedSwaps;
-        });
-      }
-    });
-
-    //if (_activewapList != null) {
-    //_filteredSwapList = _activewapList!;
-    //sc.add(_filteredSwapList);
-    // }
-  }
-
   @override
   Widget build(BuildContext context) {
     return CardScaffold(
-        title: ' Active Swaps',
+        title: ' P2P Swaps',
         childBuilder: () => FutureBuilder<List<HtlcInfo>>(
-              future: sl.get<ActiveSwapsWorker>().getSavedSwaps(),
+              future: sl.get<P2pSwapsWorker>().getSavedSwaps(),
               builder: (context, snapshot) {
                 if (snapshot.hasData && !snapshot.hasError) {
                   // _activewapList = snapshot.data!;
@@ -100,7 +64,9 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
           print("refresh??");
         },
         //TODO: Update description
-        description: 'This card displays a list of all active atomic swaps.\n '
+        description:
+            'This card displays a list of swaps that have been created '
+            'by or added to this wallet.\n '
             'Once a swap has been reclaimed or unlocked, it will '
             'be removed from the list. ');
   }
@@ -114,7 +80,7 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
             child: Scrollbar(
               controller: _scrollController,
               child: StreamBuilder<List<HtlcInfo>>(
-                initialData: sl.get<ActiveSwapsWorker>().cachedSwaps,
+                initialData: sl.get<P2pSwapsWorker>().cachedSwaps,
                 stream: streamController.stream,
                 builder: (_, snapshot) {
                   if (snapshot.hasError) {
@@ -132,7 +98,7 @@ class _ActiveSwapsCardState extends State<ActiveSwapsCard> {
                         },
                         itemBuilder: (_, index) {
                           final htlc = snapshot.data![index];
-                          return ActiveSwapsListItem(
+                          return P2pSwapsListItem(
                             key: ValueKey(htlc.id.toString()),
                             htlcInfo: htlc,
                             onStepperNotificationSeeMorePressed:

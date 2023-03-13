@@ -39,11 +39,7 @@ const String kRecipientAddressBox = 'recipient_address_box';
 const String kSharedPrefsBox = 'shared_prefs_box';
 const String kNodesBox = 'nodes_box';
 const String kKeyStoreBox = 'key_store_box';
-const String kHtlcActiveSwapsBox = 'htlc_active_swaps_box';
-
-//const Sring kHtlc
-//const String kHtlcLastCheckedHeightKey = 'htlc_last_checked_height';
-//const String kHtlcCreatedPreimagesKey = 'htlc_created_preimages';
+const String kP2pSwapsBox = 'p2p_swaps_box';
 
 const List<String> kCacheBoxesToBeDeleted = [
   kFavoriteTokensBox,
@@ -53,7 +49,7 @@ const List<String> kCacheBoxesToBeDeleted = [
   kRecipientAddressBox,
   kSharedPrefsBox,
   kNodesBox,
-  kHtlcActiveSwapsBox
+  kP2pSwapsBox,
 ];
 
 // Swap temporary directory
@@ -82,9 +78,9 @@ const String kWindowSizeHeightKey = 'window_size_height_key';
 const String kWindowPositionXKey = 'window_position_x_key';
 const String kWindowPositionYKey = 'window_position_y_key';
 const String kWindowMaximizedKey = 'window_maximized_key';
-const String kHtlcActiveSwapsKey = 'htlc_active_swaps_key';
-const String kHtlcAtomicUnlockKey = 'htlc_atomic_unlock_key';
-const String kHtlcAutoReclaimKey = 'htlc_auto_reclaim_key';
+const String kP2pSwapsKey = 'p2p_swaps_key';
+const String kP2pAtomicUnlockKey = 'p2p_atomic_unlock_key';
+const String kP2pAutoReclaimKey = 'p2p_auto_reclaim_key';
 
 const double kDefaultBorderOutlineWidth = 1.0;
 const double kMinDelegationAmount = 1.0;
@@ -115,7 +111,6 @@ const int kZnnProjectMinimumFunds = 10;
 const int kQsrProjectMinimumFunds = 100;
 const int kAmountInputMaxCharacterLength = 21;
 const int kSecondsPerMomentum = 10;
-const int kHtlcMaxCheckHours = 24;
 
 const List<int> kNormalUsersPlasmaRequirements = [
   kStakePlasmaAmountNeeded,
@@ -207,7 +202,7 @@ const List<Tabs> kTabsWithTextTitles = [
   Tabs.staking,
   Tabs.plasma,
   Tabs.tokens,
-  Tabs.atomicSwap,
+  Tabs.p2pSwap,
 ];
 
 const List<Tabs> kTabsWithIconTitles = [
