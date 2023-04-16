@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:provider/provider.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/auto_receive_tx_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/lock_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/node_sync_status_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/notifications_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/pow_generating_status_bloc.dart';
+import 'package:zenon_syrius_wallet_flutter/handlers/p2p_swaps_handler.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
 import 'package:zenon_syrius_wallet_flutter/model/database/notification_type.dart';
 import 'package:zenon_syrius_wallet_flutter/model/database/wallet_notification.dart';
@@ -523,17 +523,12 @@ class _MainAppContainerState extends State<MainAppContainer>
     );
     _lockBloc.addEvent(LockEvent.navigateToDashboard);
     _listenToAutoReceiveTxWorkerNotifications();
-    _listenToActiveSwapsWorkerNotifications();
+
+    sl<P2pSwapsHandler>().run();
   }
 
   void _listenToAutoReceiveTxWorkerNotifications() {
     sl<AutoReceiveTxWorker>().stream.listen((event) {
-      sl<NotificationsBloc>().addNotification(event);
-    });
-  }
-
-  void _listenToActiveSwapsWorkerNotifications() {
-    sl<P2pSwapsWorker>().stream.listen((event) {
       sl<NotificationsBloc>().addNotification(event);
     });
   }

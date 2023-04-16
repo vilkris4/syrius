@@ -5,7 +5,6 @@ import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:hive/hive.dart';
 import 'package:stacked/stacked.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/htlc/create_htlc_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/htlc/reclaim_htlc_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/htlc/unlock_htlc_bloc.dart';
@@ -73,7 +72,7 @@ class _P2pSwapsListItemState extends State<P2pSwapsListItem> {
       });
     } else {
       if (_isIncomingDeposit()) {
-        sl.get<P2pSwapsWorker>().removeSwap(widget.htlcInfo!.id);
+        //sl.get<P2pSwapsWorker>().removeSwap(widget.htlcInfo!.id);
       }
     }
 
@@ -91,7 +90,7 @@ class _P2pSwapsListItemState extends State<P2pSwapsListItem> {
     if (_isSwapInProgress()) {
       _autoUnlockSubscription =
           Stream.periodic(const Duration(seconds: 1)).listen((_) {
-        if (sl
+        /* if (sl
             .get<P2pSwapsWorker>()
             .autoUnlockedSwaps
             .contains(widget.htlcInfo!.id)) {
@@ -99,7 +98,7 @@ class _P2pSwapsListItemState extends State<P2pSwapsListItem> {
           setState(() {
             _isUnlocking = true;
           });
-        }
+        } */
       });
     }
   }
@@ -435,7 +434,7 @@ class _P2pSwapsListItemState extends State<P2pSwapsListItem> {
             keyMaxSize: widget.htlcInfo!.keyMaxSize,
             hashLock: widget.htlcInfo!.hashLock);
 
-        await sl.get<P2pSwapsWorker>().addPendingSwap(htlc: newHtlc);
+        //await sl.get<P2pSwapsWorker>().addPendingSwap(htlc: newHtlc);
         setState(() {});
         Navigator.pop(context);
       },
@@ -528,13 +527,13 @@ class _P2pSwapsListItemState extends State<P2pSwapsListItem> {
   }
 
   void _unlockSwap(UnlockHtlcBloc model) {
-    model.unlockHtlc(
+    /* model.unlockHtlc(
       id: widget.htlcInfo!.id,
       preimage: _secretController.text,
       hashLocked: _isIncomingDeposit()
           ? widget.htlcInfo!.hashLocked
           : Address.parse(kSelectedAddress!),
-    );
+    ); */
   }
 
   bool _hasDepositId() {
@@ -564,11 +563,12 @@ class _P2pSwapsListItemState extends State<P2pSwapsListItem> {
   bool _canMakeCounterDeposit() {
     // A counter deposit can be made if the deposit is incoming and the incoming
     // deposit isn't a counter deposit made by the counterparty.
-    return _isIncomingDeposit() &&
+    return _isIncomingDeposit() /* &&
         !sl.get<P2pSwapsWorker>().cachedSwaps.any((e) =>
             Hash.fromBytes(e.hashLock)
                 .equals(Hash.fromBytes(widget.htlcInfo!.hashLock)) &&
-            e.id != widget.htlcInfo!.id);
+            e.id != widget.htlcInfo!.id) */
+        ;
   }
 
   String _getPreimage() {

@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/dashboard/balance_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/htlc/create_htlc_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/notifications_bloc.dart';
@@ -348,10 +347,10 @@ class _SwapOptionsCardState extends State<SwapOptionsCard>
       preimage: preimage,
       onCreateButtonPressed: () {
         _createAtomicSwapButtonKey.currentState?.animateForward();
-        sl.get<P2pSwapsWorker>().addPendingSwap(
+        /* sl.get<P2pSwapsWorker>().addPendingSwap(
               htlc: newHtlc,
               preimage: preimage,
-            );
+            ); */
         model.createHtlc(
           timeLocked: newHtlc.timeLocked,
           token: _selectedToken,

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/address_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/clipboard_utils.dart';
@@ -168,7 +167,7 @@ showUnlockDialog({
                                               setState(() {
                                                 scanning = true;
                                               });
-                                              searchSecretStream = sl
+                                              /* searchSecretStream = sl
                                                   .get<P2pSwapsWorker>()
                                                   .scanForSecret(htlc.id)
                                                   .asStream()
@@ -191,7 +190,7 @@ showUnlockDialog({
                                                     });
                                                   }
                                                 },
-                                              );
+                                              ); */
                                               valid = (await InputValidators
                                                           .checkSecret(
                                                               htlc,

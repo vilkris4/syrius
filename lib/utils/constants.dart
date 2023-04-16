@@ -40,6 +40,8 @@ const String kSharedPrefsBox = 'shared_prefs_box';
 const String kNodesBox = 'nodes_box';
 const String kKeyStoreBox = 'key_store_box';
 const String kP2pSwapsBox = 'p2p_swaps_box';
+const String kHtlcPairsBox = 'htlc_pairs_box';
+const String kLastCheckedHtlcBlockBox = 'last_checked_htlc_block_box';
 
 const List<String> kCacheBoxesToBeDeleted = [
   kFavoriteTokensBox,
@@ -81,6 +83,7 @@ const String kWindowMaximizedKey = 'window_maximized_key';
 const String kP2pSwapsKey = 'p2p_swaps_key';
 const String kP2pAtomicUnlockKey = 'p2p_atomic_unlock_key';
 const String kP2pAutoReclaimKey = 'p2p_auto_reclaim_key';
+const String kLastCheckedHtlcBlockKey = 'last_checked_htlc_block_key';
 
 const double kDefaultBorderOutlineWidth = 1.0;
 const double kMinDelegationAmount = 1.0;

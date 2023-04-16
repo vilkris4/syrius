@@ -1,13 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swaps_worker.dart';
-import 'package:zenon_syrius_wallet_flutter/main.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/swap_widgets/p2p_swaps_list_item.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/error_widget.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swap/p2p_swaps_list_bloc.dart';
+import 'package:zenon_syrius_wallet_flutter/model/p2p_swap/p2p_swap.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/swap_widgets/p2p_swaps_list_item2.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/layout_scaffold/card_scaffold.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/loading_widget.dart';
-import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
 class P2pSwapsCard extends StatefulWidget {
   final VoidCallback onStepperNotificationSeeMorePressed;
@@ -23,46 +18,20 @@ class P2pSwapsCard extends StatefulWidget {
 
 class _P2pSwapsCardState extends State<P2pSwapsCard> {
   final ScrollController _scrollController = ScrollController();
-
-  final StreamController<List<HtlcInfo>> _streamController =
-      StreamController<List<HtlcInfo>>.broadcast();
-  StreamController<List<HtlcInfo>> get streamController => _streamController;
-
-  Stream<List<HtlcInfo>> get dataStream => _streamController.stream;
-  StreamSink<List<HtlcInfo>> get dataSink => _streamController.sink;
+  final P2pSwapsListBloc _p2pSwapsListBloc = P2pSwapsListBloc();
 
   @override
   void initState() {
     super.initState();
-    streamController.stream.listen((event) {
-      setState(() {
-        //_filteredSwapList = event;
-      });
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return CardScaffold(
-        title: ' P2P Swaps',
-        childBuilder: () => FutureBuilder<List<HtlcInfo>>(
-              future: sl.get<P2pSwapsWorker>().getSavedSwaps(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData && !snapshot.hasError) {
-                  // _activewapList = snapshot.data!;
-                  // _filteredSwapList = _activewapList!;
-                  return _getActiveSwapsList();
-                } else if (snapshot.hasError) {
-                  return const SyriusLoadingWidget();
-                }
-                return const SyriusLoadingWidget();
-              },
-            ),
-        onRefreshPressed: () {
-          //_searchKeyWordController.clear();
-          //refreshResults();
-          print("refresh??");
-        },
+    return CardScaffold<List<P2pSwap>>(
+        title: 'P2P Swaps',
+        childStream: _p2pSwapsListBloc.stream,
+        onCompletedStatusCallback: (data) => _getTable(data),
+        onRefreshPressed: () => _p2pSwapsListBloc.getSwaps(),
         //TODO: Update description
         description:
             'This card displays a list of swaps that have been created '
@@ -71,7 +40,7 @@ class _P2pSwapsCardState extends State<P2pSwapsCard> {
             'be removed from the list. ');
   }
 
-  Widget _getActiveSwapsList() {
+  Widget _getTable(List<P2pSwap> swaps) {
     return Padding(
       padding: const EdgeInsets.all(15.0),
       child: Column(
@@ -79,37 +48,21 @@ class _P2pSwapsCardState extends State<P2pSwapsCard> {
           Expanded(
             child: Scrollbar(
               controller: _scrollController,
-              child: StreamBuilder<List<HtlcInfo>>(
-                initialData: sl.get<P2pSwapsWorker>().cachedSwaps,
-                stream: streamController.stream,
-                builder: (_, snapshot) {
-                  if (snapshot.hasError) {
-                    return SyriusErrorWidget(snapshot.error!);
-                  }
-                  if ((snapshot.data?.length)! > 0) {
-                    return ListView.separated(
-                        controller: _scrollController,
-                        cacheExtent: 10000,
-                        itemCount: snapshot.data?.length ?? 0,
-                        separatorBuilder: (BuildContext context, int index) {
-                          return const SizedBox(
-                            height: 15.0,
-                          );
-                        },
-                        itemBuilder: (_, index) {
-                          final htlc = snapshot.data![index];
-                          return P2pSwapsListItem(
-                            key: ValueKey(htlc.id.toString()),
-                            htlcInfo: htlc,
-                            onStepperNotificationSeeMorePressed:
-                                widget.onStepperNotificationSeeMorePressed,
-                          );
-                        });
-                  } else {
-                    return const SyriusErrorWidget('No active swaps');
-                  }
-                },
-              ),
+              child: ListView.separated(
+                  controller: _scrollController,
+                  cacheExtent: 10000,
+                  itemCount: swaps.length,
+                  separatorBuilder: (_, __) {
+                    return const SizedBox(
+                      height: 15.0,
+                    );
+                  },
+                  itemBuilder: (_, index) {
+                    return P2pSwapsListItem2(
+                      key: ValueKey(swaps.elementAt(index).id),
+                      swap: swaps.elementAt(index),
+                    );
+                  }),
             ),
           ),
         ],

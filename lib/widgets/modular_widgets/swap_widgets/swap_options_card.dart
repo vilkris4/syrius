@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/p2p_swap_widgets/modals/start_native_swap_modal.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/swap_options_button.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs/swap_dialogs/initiate_swap_dialog.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs/dialogs.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/layout_scaffold/card_scaffold.dart';
 
 class SwapOptionsCard extends StatefulWidget {
@@ -38,6 +39,10 @@ class _SwapOptionsCardState extends State<SwapOptionsCard> {
     );
   }
 
+  void _onNativeSwapStarted(String swapId) {
+    print("ON START " + swapId);
+  }
+
   Column _getNativeOptions() {
     return Column(
       children: [
@@ -45,7 +50,11 @@ class _SwapOptionsCardState extends State<SwapOptionsCard> {
           primaryText: 'Start swap',
           secondaryText: 'Start a native swap with a counterparty.',
           onClick: () {
-            showInitiateSwapDialog(context: context);
+            showCustomDialog(
+              context: context,
+              content:
+                  StartNativeSwapModal(onSwapStarted: _onNativeSwapStarted),
+            );
           },
         ),
         const SizedBox(
@@ -91,10 +100,5 @@ class _SwapOptionsCardState extends State<SwapOptionsCard> {
         ),
       ],
     );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }

@@ -13,7 +13,6 @@ import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/accelerator/accelerator_balance_bloc.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swaps_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/auto_receive_tx_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/dashboard/balance_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/lock_bloc.dart';
@@ -21,6 +20,7 @@ import 'package:zenon_syrius_wallet_flutter/blocs/notifications_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/plasma/plasma_stats_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/pow_generating_status_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/transfer/transfer_widgets_balance_bloc.dart';
+import 'package:zenon_syrius_wallet_flutter/handlers/p2p_swaps_handler.dart';
 import 'package:zenon_syrius_wallet_flutter/model/database/notification_type.dart';
 import 'package:zenon_syrius_wallet_flutter/model/database/wallet_notification.dart';
 import 'package:zenon_syrius_wallet_flutter/model/navigation_arguments.dart';
@@ -130,7 +130,7 @@ void setup() {
       (() => SharedPrefsService.getInstance().then((value) => value!)));
 
   sl.registerSingleton<AutoReceiveTxWorker>(AutoReceiveTxWorker.getInstance());
-  sl.registerSingleton<P2pSwapsWorker>(P2pSwapsWorker.getInstance());
+  sl.registerSingleton<P2pSwapsHandler>(P2pSwapsHandler.getInstance());
 
   sl.registerSingleton<ReceivePort>(ReceivePort(),
       instanceName: 'embeddedStoppedPort');

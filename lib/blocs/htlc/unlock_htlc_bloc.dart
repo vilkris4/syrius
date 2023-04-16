@@ -10,14 +10,14 @@ class UnlockHtlcBloc extends BaseBloc<AccountBlockTemplate?> {
   void unlockHtlc({
     required Hash id,
     required String preimage,
-    required Address? hashLocked,
+    required String hashLocked,
   }) {
     try {
       addEvent(null);
       AccountBlockTemplate transactionParams =
           zenon!.embedded.htlc.unlock(id, hex.decode(preimage));
       KeyPair blockSigningKeyPair = kKeyStore!.getKeyPair(
-        kDefaultAddressList.indexOf(hashLocked.toString()),
+        kDefaultAddressList.indexOf(hashLocked),
       );
       AccountBlockUtils.createAccountBlock(transactionParams, 'unlock swap',
               blockSigningKey: blockSigningKeyPair, waitForRequiredPlasma: true)
