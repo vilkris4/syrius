@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/notifications_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/pow_generating_status_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/transfer/transfer_widgets_balance_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
+import 'package:zenon_syrius_wallet_flutter/model/block_data.dart';
 import 'package:zenon_syrius_wallet_flutter/model/database/notification_type.dart';
 import 'package:zenon_syrius_wallet_flutter/model/database/wallet_notification.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
@@ -95,6 +97,27 @@ class AccountBlockUtils {
     } else {
       throw 'Node is not synced';
     }
+  }
+
+  static BlockData? getDecodedBlockData(Abi abi, AccountBlock block) {
+    final eq = const ListEquality().equals;
+    try {
+      for (final entry in abi.entries) {
+        if (eq(AbiFunction.extractSignature(entry.encodeSignature()),
+            AbiFunction.extractSignature(block.data))) {
+          final decoded =
+              AbiFunction(entry.name!, entry.inputs!).decode(block.data);
+          final Map<String, dynamic> params = {};
+          for (int i = 0; i < entry.inputs!.length; i += 1) {
+            params[entry.inputs![i].name!] = decoded[i];
+          }
+          return BlockData(function: entry.name!, params: params);
+        }
+      }
+    } catch (e) {
+      rethrow;
+    }
+    return null;
   }
 
   static void _addEventToPowGeneratingStatusBloc(PowStatus event) =>
