@@ -9,7 +9,6 @@ import 'package:zenon_syrius_wallet_flutter/blocs/lock_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/node_sync_status_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/notifications_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/pow_generating_status_bloc.dart';
-import 'package:zenon_syrius_wallet_flutter/handlers/p2p_swaps_handler.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
 import 'package:zenon_syrius_wallet_flutter/model/database/notification_type.dart';
 import 'package:zenon_syrius_wallet_flutter/model/database/wallet_notification.dart';
@@ -523,8 +522,6 @@ class _MainAppContainerState extends State<MainAppContainer>
     );
     _lockBloc.addEvent(LockEvent.navigateToDashboard);
     _listenToAutoReceiveTxWorkerNotifications();
-
-    sl<P2pSwapsHandler>().run();
   }
 
   void _listenToAutoReceiveTxWorkerNotifications() {
