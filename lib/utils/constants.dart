@@ -39,8 +39,7 @@ const String kRecipientAddressBox = 'recipient_address_box';
 const String kSharedPrefsBox = 'shared_prefs_box';
 const String kNodesBox = 'nodes_box';
 const String kKeyStoreBox = 'key_store_box';
-const String kP2pSwapsBox = 'p2p_swaps_box';
-const String kHtlcPairsBox = 'htlc_pairs_box';
+const String kHtlcSwapsBox = 'htlc_swaps_box';
 const String kLastCheckedHtlcBlockBox = 'last_checked_htlc_block_box';
 
 const List<String> kCacheBoxesToBeDeleted = [
@@ -51,7 +50,8 @@ const List<String> kCacheBoxesToBeDeleted = [
   kRecipientAddressBox,
   kSharedPrefsBox,
   kNodesBox,
-  kP2pSwapsBox,
+  kHtlcSwapsBox,
+  kLastCheckedHtlcBlockBox
 ];
 
 // Swap temporary directory
