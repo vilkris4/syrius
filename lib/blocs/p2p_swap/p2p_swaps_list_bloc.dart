@@ -1,23 +1,25 @@
-import 'dart:convert';
+import 'dart:async';
 
-import 'package:hive/hive.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/base_bloc.dart';
+import 'package:zenon_syrius_wallet_flutter/main.dart';
 import 'package:zenon_syrius_wallet_flutter/model/p2p_swap/p2p_swap.dart';
-import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
-import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
 
 class P2pSwapsListBloc extends BaseBloc<List<P2pSwap>> {
-  P2pSwapsListBloc() {
-    getSwaps();
+  Timer? _timer;
+
+  Future<void> getDataPeriodically() async {
+    try {
+      _timer = makePeriodicCall(const Duration(seconds: 5), (Timer t) async {
+        await getSwaps();
+      });
+    } catch (e) {
+      addError(e);
+    }
   }
 
   Future<void> getSwaps() async {
     try {
-      await _openBox();
-      final swaps = Hive.box(kP2pSwapsBox)
-          .values
-          .map((e) => P2pSwap.fromJson(jsonDecode(e)))
-          .toList();
+      final swaps = htlcSwapsService!.getAllSwaps();
       swaps.sort((a, b) => b.startTime.compareTo(a.startTime));
       addEvent(swaps);
     } catch (e) {
@@ -25,11 +27,16 @@ class P2pSwapsListBloc extends BaseBloc<List<P2pSwap>> {
     }
   }
 
-  Future<void> _openBox() async {
-    if (!Hive.isBoxOpen(kP2pSwapsBox)) {
-      await Hive.openBox(kP2pSwapsBox,
-          encryptionCipher:
-              HiveAesCipher((kKeyStore!.getKeyPair(0).getPrivateKey())!));
-    }
+  Timer makePeriodicCall(
+      Duration duration, void Function(Timer timer) callback) {
+    final timer = Timer.periodic(duration, callback);
+    callback(timer);
+    return timer;
+  }
+
+  @override
+  dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 }
