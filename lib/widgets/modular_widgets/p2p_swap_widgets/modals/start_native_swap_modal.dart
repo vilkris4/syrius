@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/dashboard/balance_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/htlc/create_htlc_bloc.dart';
-import 'package:zenon_syrius_wallet_flutter/handlers/p2p_swaps_handler.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
 import 'package:zenon_syrius_wallet_flutter/model/basic_dropdown_item.dart';
-import 'package:zenon_syrius_wallet_flutter/model/p2p_swap/htlc_pair.dart';
+import 'package:zenon_syrius_wallet_flutter/model/p2p_swap/htlc_swap.dart';
 import 'package:zenon_syrius_wallet_flutter/model/p2p_swap/p2p_swap.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/clipboard_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
+import 'package:zenon_syrius_wallet_flutter/utils/format_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/input_validators.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/zts_utils.dart';
@@ -21,6 +21,7 @@ import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dropdown/ba
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/error_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/amount_input_field.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/input_field.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/labeled_input_container.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/loading_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/modals/base_modal.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
@@ -34,13 +35,13 @@ class StartNativeSwapModal extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _StartNativeSwapModalState createState() => _StartNativeSwapModalState();
+  State<StartNativeSwapModal> createState() => _StartNativeSwapModalState();
 }
 
 class _StartNativeSwapModalState extends State<StartNativeSwapModal> {
   Token _selectedToken = kZnnCoin;
-  bool _areInputsValid = false;
   String? _selectedSelfAddress = kSelectedAddress;
+  bool _isAmountValid = false;
 
   late Hash _hashLock;
   late List<int> _preimage;
@@ -58,11 +59,20 @@ class _StartNativeSwapModalState extends State<StartNativeSwapModal> {
     BasicDropdownItem(label: '24 hours', value: kOneHourInSeconds * 24),
   ];
 
+  bool _isSendingTransaction = false;
+
   @override
   void initState() {
     super.initState();
     sl.get<BalanceBloc>().getBalanceForAllAddresses();
     _selectedLockDuration = _lockDurationItems[1];
+  }
+
+  @override
+  void dispose() {
+    _counterpartyAddressController.dispose();
+    _amountController.dispose();
+    super.dispose();
   }
 
   @override
@@ -78,51 +88,35 @@ class _StartNativeSwapModalState extends State<StartNativeSwapModal> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 25.0),
+        const SizedBox(height: 20.0),
         Row(
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Your address',
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      color: AppColors.darkHintTextColor,
-                    ),
-                  ),
-                  const SizedBox(height: 3.0),
-                  AddressesDropdown(
-                    _selectedSelfAddress,
-                    (address) => setState(() {
-                      _selectedSelfAddress = address;
-                      sl.get<BalanceBloc>().getBalanceForAllAddresses();
-                    }),
-                  ),
-                ],
+              child: LabeledInputContainer(
+                labelText: 'Your address',
+                inputWidget: AddressesDropdown(
+                  _selectedSelfAddress,
+                  (address) => setState(() {
+                    _selectedSelfAddress = address;
+                    sl.get<BalanceBloc>().getBalanceForAllAddresses();
+                  }),
+                ),
               ),
             ),
             const SizedBox(
               width: 20.0,
             ),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Counterparty address',
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      color: AppColors.darkHintTextColor,
-                    ),
-                  ),
-                  const SizedBox(height: 3.0),
-                  InputField(
+              child: LabeledInputContainer(
+                labelText: 'Counterparty address',
+                helpText: 'The address of the trading partner for the swap.',
+                inputWidget: Form(
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  child: InputField(
                     onChanged: (value) {
                       setState(() {});
                     },
-                    validator: (value) => InputValidators.checkAddress(value),
+                    validator: (value) => _validateCounterpartyAddress(value),
                     controller: _counterpartyAddressController,
                     suffixIcon: RawMaterialButton(
                       child: const Icon(
@@ -144,85 +138,66 @@ class _StartNativeSwapModalState extends State<StartNativeSwapModal> {
                       maxHeight: 20.0,
                     ),
                     hintText: 'z1q...',
-                    contentLeftPadding: 20.0,
+                    contentLeftPadding: 10.0,
                   ),
-                ],
+                ),
               ),
             ),
           ],
         ),
         kVerticalSpacing,
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'You are selling',
-              style: TextStyle(
-                fontSize: 14.0,
-                color: AppColors.darkHintTextColor,
-              ),
-            ),
-            const SizedBox(height: 3.0),
-            Flexible(
-              child: StreamBuilder<Map<String, AccountInfo>?>(
-                stream: sl.get<BalanceBloc>().stream,
-                builder: (_, snapshot) {
-                  if (snapshot.hasError) {
-                    return SyriusErrorWidget(snapshot.error!);
-                  }
-                  if (snapshot.connectionState == ConnectionState.active) {
-                    if (snapshot.hasData) {
-                      return AmountInputField(
-                        controller: _amountController,
-                        accountInfo: (snapshot.data![_selectedSelfAddress]!),
-                        valuePadding: 20.0,
-                        textColor: Theme.of(context).colorScheme.inverseSurface,
-                        initialToken: _selectedToken,
-                        onChanged: (token, isValid) {
-                          setState(() {
-                            _selectedToken = token;
-                            _areInputsValid = isValid;
-                          });
-                        },
-                      );
-                    } else {
-                      return const SyriusLoadingWidget();
-                    }
+        LabeledInputContainer(
+          labelText: 'You are sending',
+          inputWidget: Flexible(
+            child: StreamBuilder<Map<String, AccountInfo>?>(
+              stream: sl.get<BalanceBloc>().stream,
+              builder: (_, snapshot) {
+                if (snapshot.hasError) {
+                  return SyriusErrorWidget(snapshot.error!);
+                }
+                if (snapshot.connectionState == ConnectionState.active) {
+                  if (snapshot.hasData) {
+                    return AmountInputField(
+                      controller: _amountController,
+                      accountInfo: (snapshot.data![_selectedSelfAddress]!),
+                      valuePadding: 10.0,
+                      textColor: Theme.of(context).colorScheme.inverseSurface,
+                      initialToken: _selectedToken,
+                      hintText: '0.0',
+                      onChanged: (token, isValid) {
+                        setState(() {
+                          _selectedToken = token;
+                          _isAmountValid = isValid;
+                        });
+                      },
+                    );
                   } else {
                     return const SyriusLoadingWidget();
                   }
-                },
-              ),
+                } else {
+                  return const SyriusLoadingWidget();
+                }
+              },
             ),
-          ],
+          ),
         ),
         kVerticalSpacing,
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Your deposit expires in',
-              style: TextStyle(
-                fontSize: 14.0,
-                color: AppColors.darkHintTextColor,
-              ),
+        LabeledInputContainer(
+          labelText: 'Your deposit expires in',
+          helpText:
+              'If the swap is unsuccessful you can reclaim your funds after the deposit has expired.',
+          inputWidget: BasicDropdown<int>(
+            'Lock duration',
+            _selectedLockDuration,
+            _lockDurationItems,
+            (duration) => setState(
+              () {
+                if (duration != null) {
+                  _selectedLockDuration = duration;
+                }
+              },
             ),
-            const SizedBox(height: 3.0),
-            BasicDropdown<int>(
-              'Lock duration',
-              _selectedLockDuration,
-              _lockDurationItems,
-              (duration) => setState(
-                () {
-                  if (duration != null) {
-                    _selectedLockDuration = duration;
-                  }
-                },
-              ),
-            ),
-          ],
+          ),
         ),
         const SizedBox(height: 25.0),
         _getStartSwapViewModel(),
@@ -234,18 +209,38 @@ class _StartNativeSwapModalState extends State<StartNativeSwapModal> {
     return ViewModelBuilder<CreateHtlcBloc>.reactive(
       onModelReady: (model) {
         model.stream.listen(
-          (event) {
+          (event) async {
             if (event is AccountBlockTemplate) {
-              _storeP2pSwap(event.hash.toString());
-              _storeHtlcPair(event.hash.toString());
+              await htlcSwapsService!.storeSwap(HtlcSwap(
+                id: event.hash.toString(),
+                type: P2pSwapType.native,
+                direction: P2pSwapDirection.outgoing,
+                selfAddress: _selectedSelfAddress!,
+                counterpartyAddress: _counterpartyAddressController.text,
+                state: P2pSwapState.pending,
+                startTime:
+                    (DateTime.now().millisecondsSinceEpoch / 1000).round(),
+                initialHtlcExpirationTime: _expirationTime,
+                fromAmount: _amountController.text
+                    .toNum()
+                    .extractDecimals(_selectedToken.decimals),
+                fromTokenStandard: _selectedToken.tokenStandard.toString(),
+                fromDecimals: _selectedToken.decimals,
+                fromSymbol: _selectedToken.symbol,
+                fromChain: P2pSwapChain.nom,
+                toChain: P2pSwapChain.nom,
+                hashLock: _hashLock.toString(),
+                preimage: FormatUtils.encodeHexString(_preimage),
+                initialHtlcId: event.hash.toString(),
+                hashType: htlcHashTypeSha3,
+              ));
               widget.onSwapStarted.call(event.hash.toString());
-              Navigator.pop(context);
             }
           },
           onError: (error) {
-            //TODO: remove pending swap
-            //Example: create a swap with a net id that doesn't match the node
-            //_sendErrorNotification(error);
+            setState(() {
+              _isSendingTransaction = false;
+            });
           },
         );
       },
@@ -258,21 +253,17 @@ class _StartNativeSwapModalState extends State<StartNativeSwapModal> {
     return InstructionButton(
       text: 'Start swap',
       instructionText: 'Fill in the swap details',
-      isEnabled: true, //areInputsValid,
-      onPressed: () {
-        if (_areInputsValid) {
-          _onStartButtonPressed(model);
-        } else {
-          if (_amountController.text.isEmpty) {
-            _amountController.text = ' ';
-            _amountController.text = '';
-          }
-        }
-      },
+      loadingText: 'Sending transaction',
+      isEnabled: _isInputValid(),
+      isLoading: _isSendingTransaction,
+      onPressed: () => _onStartButtonPressed(model),
     );
   }
 
   void _onStartButtonPressed(CreateHtlcBloc model) async {
+    setState(() {
+      _isSendingTransaction = true;
+    });
     _expirationTime = (await zenon!.ledger.getFrontierMomentum()).timestamp +
         _selectedLockDuration.value;
     _preimage = _generatePreimage();
@@ -290,42 +281,24 @@ class _StartNativeSwapModalState extends State<StartNativeSwapModal> {
     );
   }
 
-  void _storeP2pSwap(String id) async {
-    await sl<P2pSwapsHandler>().storeSwap(P2pSwap(
-        id: id,
-        type: P2pSwapType.native,
-        mode: P2pSwapMode.htlc,
-        direction: P2pSwapDirection.outgoing,
-        state: P2pSwapState.pending,
-        startTime: (DateTime.now().millisecondsSinceEpoch / 1000).round(),
-        expirationTime: _expirationTime,
-        fromAmount: _amountController.text
-            .toNum()
-            .extractDecimals(_selectedToken.decimals),
-        toAmount: 0,
-        fromToken: _selectedToken,
-        selfAddress: _selectedSelfAddress!,
-        counterpartyAddress: _counterpartyAddressController.text));
-  }
-
-  void _storeHtlcPair(String initialHtlcId) async {
-    await sl<P2pSwapsHandler>().storeHtlcPair(HtlcPair(
-      hashLock: _hashLock.toString(),
-      preimage: _preimage.toString(),
-      initialHtlcId: initialHtlcId,
-      counterHtlcId: '',
-    ));
-  }
-
   List<int> _generatePreimage([int length = htlcPreimageDefaultLength]) {
     const maxInt = 256;
     return List<int>.generate(length, (i) => Random.secure().nextInt(maxInt));
   }
 
-  @override
-  void dispose() {
-    _counterpartyAddressController.dispose();
-    _amountController.dispose();
-    super.dispose();
+  bool _isInputValid() =>
+      _validateCounterpartyAddress(_counterpartyAddressController.text) ==
+          null &&
+      _isAmountValid;
+
+  String? _validateCounterpartyAddress(String? address) {
+    String? result = InputValidators.checkAddress(address);
+    if (result != null) {
+      return result;
+    } else {
+      return kDefaultAddressList.contains(address)
+          ? 'Cannot swap with your own address'
+          : null;
+    }
   }
 }
