@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/p2p_swap_widgets/modals/join_native_swap_modal.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/p2p_swap_widgets/modals/native_p2p_swap_modal.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/p2p_swap_widgets/modals/start_native_swap_modal.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/swap_options_button.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs/dialogs.dart';
@@ -15,7 +19,7 @@ class SwapOptionsCard extends StatefulWidget {
 }
 
 class _SwapOptionsCardState extends State<SwapOptionsCard> {
-  bool isSwapTutorialHovered = false;
+  bool _isSwapTutorialHovered = false;
 
   @override
   void initState() {
@@ -39,8 +43,16 @@ class _SwapOptionsCardState extends State<SwapOptionsCard> {
     );
   }
 
-  void _onNativeSwapStarted(String swapId) {
-    print("ON START " + swapId);
+  void _showNativeSwapModal(String swapId) {
+    Navigator.pop(context);
+    Timer.run(
+      () => showCustomDialog(
+        context: context,
+        content: NativeP2pSwapModal(
+          swapId: swapId,
+        ),
+      ),
+    );
   }
 
   Column _getNativeOptions() {
@@ -49,13 +61,10 @@ class _SwapOptionsCardState extends State<SwapOptionsCard> {
         SwapOptionsButton(
           primaryText: 'Start swap',
           secondaryText: 'Start a native swap with a counterparty.',
-          onClick: () {
-            showCustomDialog(
-              context: context,
-              content:
-                  StartNativeSwapModal(onSwapStarted: _onNativeSwapStarted),
-            );
-          },
+          onClick: () => showCustomDialog(
+            context: context,
+            content: StartNativeSwapModal(onSwapStarted: _showNativeSwapModal),
+          ),
         ),
         const SizedBox(
           height: 25.0,
@@ -63,17 +72,18 @@ class _SwapOptionsCardState extends State<SwapOptionsCard> {
         SwapOptionsButton(
           primaryText: 'Join swap',
           secondaryText: 'Join a native swap started by a counterparty.',
-          onClick: () {
-            print('Join swap');
-          },
+          onClick: () => showCustomDialog(
+            context: context,
+            content: JoinNativeSwapModal(onJoinedSwap: _showNativeSwapModal),
+          ),
         ),
         const SizedBox(
           height: 40.0,
         ),
         MouseRegion(
           cursor: SystemMouseCursors.click,
-          onEnter: (details) => setState(() => isSwapTutorialHovered = true),
-          onExit: (details) => setState(() => isSwapTutorialHovered = false),
+          onEnter: (_) => setState(() => _isSwapTutorialHovered = true),
+          onExit: (_) => setState(() => _isSwapTutorialHovered = false),
           child: GestureDetector(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -81,16 +91,19 @@ class _SwapOptionsCardState extends State<SwapOptionsCard> {
                 Text(
                   'View swap tutorial',
                   style: TextStyle(
-                    color: isSwapTutorialHovered
+                    color: _isSwapTutorialHovered
                         ? Colors.white
                         : AppColors.subtitleColor,
                     fontSize: 14.0,
                   ),
                 ),
+                const SizedBox(
+                  width: 3.0,
+                ),
                 Icon(
                   Icons.open_in_new,
                   size: 18.0,
-                  color: isSwapTutorialHovered
+                  color: _isSwapTutorialHovered
                       ? Colors.white
                       : AppColors.subtitleColor,
                 ),
