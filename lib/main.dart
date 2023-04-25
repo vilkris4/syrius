@@ -14,19 +14,21 @@ import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/accelerator/accelerator_balance_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/auto_receive_tx_worker.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/auto_unlock_htlc_worker.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/dashboard/balance_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/lock_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/notifications_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/plasma/plasma_stats_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/pow_generating_status_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/transfer/transfer_widgets_balance_bloc.dart';
-import 'package:zenon_syrius_wallet_flutter/handlers/p2p_swaps_handler.dart';
+import 'package:zenon_syrius_wallet_flutter/handlers/htlc_swaps_handler.dart';
 import 'package:zenon_syrius_wallet_flutter/model/database/notification_type.dart';
 import 'package:zenon_syrius_wallet_flutter/model/database/wallet_notification.dart';
 import 'package:zenon_syrius_wallet_flutter/model/navigation_arguments.dart';
 import 'package:zenon_syrius_wallet_flutter/screens/node_management_screen.dart';
 import 'package:zenon_syrius_wallet_flutter/screens/onboarding/access_wallet_screen.dart';
 import 'package:zenon_syrius_wallet_flutter/screens/splash_screen.dart';
+import 'package:zenon_syrius_wallet_flutter/services/htlc_swaps_service.dart';
 import 'package:zenon_syrius_wallet_flutter/services/shared_prefs_service.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_theme.dart';
@@ -46,6 +48,7 @@ import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
 Zenon? zenon;
 SharedPrefsService? sharedPrefsService;
+HtlcSwapsService? htlcSwapsService;
 
 final sl = GetIt.instance;
 
@@ -73,6 +76,8 @@ main() async {
   } else {
     await sharedPrefsService!.checkIfBoxIsOpen();
   }
+
+  htlcSwapsService ??= sl.get<HtlcSwapsService>();
 
   windowManager.waitUntilReadyToShow().then((_) async {
     await windowManager.setTitle('s y r i u s');
@@ -128,9 +133,13 @@ void setup() {
   zenon = sl<Zenon>();
   sl.registerLazySingletonAsync<SharedPrefsService>(
       (() => SharedPrefsService.getInstance().then((value) => value!)));
+  sl.registerSingleton<HtlcSwapsService>(HtlcSwapsService.getInstance());
 
   sl.registerSingleton<AutoReceiveTxWorker>(AutoReceiveTxWorker.getInstance());
-  sl.registerSingleton<P2pSwapsHandler>(P2pSwapsHandler.getInstance());
+  sl.registerSingleton<AutoUnlockHtlcWorker>(
+      AutoUnlockHtlcWorker.getInstance());
+
+  sl.registerSingleton<HtlcSwapsHandler>(HtlcSwapsHandler.getInstance());
 
   sl.registerSingleton<ReceivePort>(ReceivePort(),
       instanceName: 'embeddedStoppedPort');
