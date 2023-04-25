@@ -99,14 +99,14 @@ class AccountBlockUtils {
     }
   }
 
-  static BlockData? getDecodedBlockData(Abi abi, AccountBlock block) {
+  static BlockData? getDecodedBlockData(Abi abi, List<int> encodedData) {
     final eq = const ListEquality().equals;
     try {
       for (final entry in abi.entries) {
         if (eq(AbiFunction.extractSignature(entry.encodeSignature()),
-            AbiFunction.extractSignature(block.data))) {
+            AbiFunction.extractSignature(encodedData))) {
           final decoded =
-              AbiFunction(entry.name!, entry.inputs!).decode(block.data);
+              AbiFunction(entry.name!, entry.inputs!).decode(encodedData);
           final Map<String, dynamic> params = {};
           for (int i = 0; i < entry.inputs!.length; i += 1) {
             params[entry.inputs![i].name!] = decoded[i];
