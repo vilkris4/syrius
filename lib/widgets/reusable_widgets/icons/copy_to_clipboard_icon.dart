@@ -1,8 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/clipboard_utils.dart';
 
-class CopyToClipboardIcon extends StatelessWidget {
+class CopyToClipboardIcon extends StatefulWidget {
   final String? textToBeCopied;
   final Color iconColor;
   final Color? hoverColor;
@@ -21,19 +23,44 @@ class CopyToClipboardIcon extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<CopyToClipboardIcon> createState() => _CopyToClipboardIcon();
+}
+
+class _CopyToClipboardIcon extends State<CopyToClipboardIcon> {
+  final _iconSize = 15.0;
+  bool _isCopied = false;
+
+  @override
   Widget build(BuildContext context) {
     return RawMaterialButton(
-      materialTapTargetSize: materialTapTargetSize,
-      hoverColor: hoverColor,
-      constraints: const BoxConstraints.tightForFinite(),
-      padding: padding,
-      child: Icon(
-        icon,
-        color: iconColor,
-        size: 15.0,
-      ),
-      shape: const CircleBorder(),
-      onPressed: () => ClipboardUtils.copyToClipboard(textToBeCopied!, context),
-    );
+        materialTapTargetSize: widget.materialTapTargetSize,
+        hoverColor: widget.hoverColor,
+        constraints: const BoxConstraints.tightForFinite(),
+        padding: widget.padding,
+        child: AnimatedCrossFade(
+          duration: const Duration(milliseconds: 100),
+          firstChild:
+              Icon(widget.icon, color: widget.iconColor, size: _iconSize),
+          secondChild:
+              Icon(Icons.check, color: AppColors.znnColor, size: _iconSize),
+          crossFadeState:
+              _isCopied ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+        ),
+        shape: const CircleBorder(),
+        onPressed: () {
+          if (!_isCopied) {
+            Timer(const Duration(seconds: 3), () {
+              if (mounted) {
+                setState(() {
+                  _isCopied = false;
+                });
+              }
+            });
+            setState(() {
+              _isCopied = true;
+            });
+          }
+          ClipboardUtils.copyToClipboard(widget.textToBeCopied!, context);
+        });
   }
 }
