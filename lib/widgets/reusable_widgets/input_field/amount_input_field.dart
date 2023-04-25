@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/format_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/input_validators.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/zts_utils.dart';
@@ -14,6 +15,7 @@ class AmountInputField extends StatefulWidget {
   final double? valuePadding;
   final Color? textColor;
   final Token? initialToken;
+  final String hintText;
 
   const AmountInputField({
     required this.controller,
@@ -22,6 +24,7 @@ class AmountInputField extends StatefulWidget {
     this.valuePadding,
     this.textColor,
     this.initialToken,
+    this.hintText = 'Amount',
     Key? key,
   }) : super(key: key);
 
@@ -64,7 +67,8 @@ class _AmountInputFieldState extends State<AmountInputField> {
         ),
         controller: widget.controller,
         suffixIcon: _getAmountSuffix(),
-        hintText: 'Amount',
+        hintText: widget.hintText,
+        contentLeftPadding: widget.valuePadding ?? kContentPadding,
       ),
       onChanged: () => (widget.onChanged != null)
           ? widget.onChanged!(_selectedToken!, (_isInputValid()) ? true : false)
