@@ -1,14 +1,6 @@
-import 'dart:convert';
-
-import 'package:znn_sdk_dart/znn_sdk_dart.dart';
-
 enum P2pSwapType {
   native,
   crosschain,
-}
-
-enum P2pSwapMode {
-  htlc,
 }
 
 enum P2pSwapState {
@@ -17,6 +9,11 @@ enum P2pSwapState {
   completed,
   reclaimable,
   unsuccessful,
+  error,
+}
+
+enum P2pSwapMode {
+  htlc,
 }
 
 enum P2pSwapDirection {
@@ -24,66 +21,90 @@ enum P2pSwapDirection {
   incoming,
 }
 
+enum P2pSwapChain {
+  nom,
+  btc,
+  other,
+}
+
 class P2pSwap {
   final String id;
   final P2pSwapType type;
   final P2pSwapMode mode;
   final P2pSwapDirection direction;
-  final int startTime;
-  final int expirationTime;
-  final int fromAmount;
-  final Token fromToken;
   final String selfAddress;
   final String counterpartyAddress;
+  final int fromAmount;
+  final String fromTokenStandard;
+  final String fromSymbol;
+  final int fromDecimals;
+  final P2pSwapChain fromChain;
+  final P2pSwapChain toChain;
+  final int startTime;
   P2pSwapState state;
-  int toAmount;
-  Token? toToken;
+  int? toAmount;
+  String? toTokenStandard;
+  String? toSymbol;
+  int? toDecimals;
 
   P2pSwap(
       {required this.id,
       required this.type,
       required this.mode,
       required this.direction,
-      required this.state,
-      required this.startTime,
-      required this.expirationTime,
-      required this.fromAmount,
-      required this.toAmount,
-      required this.fromToken,
       required this.selfAddress,
       required this.counterpartyAddress,
-      this.toToken});
+      required this.fromAmount,
+      required this.fromTokenStandard,
+      required this.fromSymbol,
+      required this.fromDecimals,
+      required this.fromChain,
+      required this.toChain,
+      required this.startTime,
+      required this.state,
+      this.toAmount,
+      this.toTokenStandard,
+      this.toSymbol,
+      this.toDecimals});
 
   P2pSwap.fromJson(Map<String, dynamic> json)
       : id = json['id'],
         type = P2pSwapType.values.byName(json['type']),
         mode = P2pSwapMode.values.byName(json['mode']),
         direction = P2pSwapDirection.values.byName(json['direction']),
-        state = P2pSwapState.values.byName(json['state']),
-        startTime = json['startTime'],
-        expirationTime = json['expirationTime'],
-        fromAmount = json['fromAmount'],
-        toAmount = json['toAmount'],
-        fromToken = Token.fromJson(jsonDecode(json['fromToken'])),
-        toToken = json['toToken'].isEmpty
-            ? null
-            : Token.fromJson(jsonDecode(json['toToken'])),
         selfAddress = json['selfAddress'],
-        counterpartyAddress = json['counterpartyAddress'];
+        counterpartyAddress = json['counterpartyAddress'],
+        fromAmount = json['fromAmount'],
+        fromTokenStandard = json['fromTokenStandard'],
+        fromSymbol = json['fromSymbol'],
+        fromDecimals = json['fromDecimals'],
+        fromChain = P2pSwapChain.values.byName(json['fromChain']),
+        toChain = P2pSwapChain.values.byName(json['toChain']),
+        startTime = json['startTime'],
+        state = P2pSwapState.values.byName(json['state']),
+        toAmount = json['toAmount'],
+        toTokenStandard = json['toTokenStandard'],
+        toSymbol = json['toSymbol'],
+        toDecimals = json['toDecimals'];
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'type': type.name,
         'mode': mode.name,
         'direction': direction.name,
-        'state': state.name,
-        'startTime': startTime,
-        'expirationTime': expirationTime,
-        'fromAmount': fromAmount,
-        'toAmount': toAmount,
         'selfAddress': selfAddress,
         'counterpartyAddress': counterpartyAddress,
-        'fromToken': jsonEncode(fromToken.toJson()),
-        'toToken': toToken != null ? jsonEncode(toToken!.toJson()) : ''
+        'fromAmount': fromAmount,
+        'fromTokenStandard': fromTokenStandard,
+        'fromSymbol': fromSymbol,
+        'fromDecimals': fromDecimals,
+        'fromChain': fromChain.name,
+        'toChain': toChain.name,
+        'startTime': startTime,
+        'state': state.name,
+        'toAmount': toAmount,
+        'toTokenStandard': toTokenStandard,
+        'toSymbol': toSymbol,
+        'toDecimals': toDecimals,
       };
 }
