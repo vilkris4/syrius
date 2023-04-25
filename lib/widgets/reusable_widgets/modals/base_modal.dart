@@ -17,7 +17,7 @@ class BaseModal extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       child: AnimatedSize(
-        duration: const Duration(milliseconds: 250),
+        duration: const Duration(milliseconds: 100),
         curve: Curves.easeInOut,
         child: Container(
           width: 570.0,
@@ -57,7 +57,7 @@ class BaseModal extends StatelessWidget {
                         child: const Icon(
                           Icons.clear,
                           color: AppColors.lightSecondary,
-                          size: 25.0,
+                          size: 22.0,
                         ),
                       ),
                     ),
