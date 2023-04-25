@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/loading_info_text.dart';
+
+enum ButtonState { busy, idle }
 
 class InstructionButton extends StatefulWidget {
   final String text;
-  final String instructionText;
   final bool isEnabled;
+  final bool isLoading;
   final VoidCallback onPressed;
+  final String? instructionText;
+  final String? loadingText;
 
   const InstructionButton({
     required this.text,
-    required this.instructionText,
     required this.isEnabled,
+    required this.isLoading,
     required this.onPressed,
+    this.instructionText,
+    this.loadingText,
     Key? key,
   }) : super(key: key);
 
@@ -20,27 +27,37 @@ class InstructionButton extends StatefulWidget {
 }
 
 class _InstructionButtonState extends State<InstructionButton> {
-  late bool _showLoading;
-
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48.0,
-      child: TextButton(
-        child: Opacity(
-          opacity: widget.isEnabled ? 1.0 : 0.3,
-          child: Text(
-            widget.isEnabled ? widget.text : widget.instructionText,
-            style: Theme.of(context).textTheme.bodyLarge,
+      width: double.infinity,
+      child: ElevatedButton(
+        child: AnimatedCrossFade(
+          duration: Duration(milliseconds: widget.isLoading ? 1000 : 10),
+          firstCurve: Curves.easeInOut,
+          firstChild: Visibility(
+            visible: !widget.isLoading,
+            child: Opacity(
+              opacity: widget.isEnabled ? 1.0 : 0.3,
+              child: Text(
+                widget.isEnabled ? widget.text : (widget.instructionText ?? ''),
+                style: Theme.of(context).textTheme.headline6,
+              ),
+            ),
           ),
+          secondChild: SizedBox(
+            width: double.infinity,
+            child: LoadingInfoText(text: widget.loadingText ?? ''),
+          ),
+          crossFadeState: widget.isLoading
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
         ),
-        onPressed: widget.isEnabled ? widget.onPressed : null,
-        style: TextButton.styleFrom(
+        onPressed:
+            (widget.isEnabled && !widget.isLoading) ? widget.onPressed : null,
+        style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.znnColor,
           disabledBackgroundColor: AppColors.znnColor.withOpacity(0.1),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4.0),
-          ),
         ),
       ),
     );
