@@ -16,7 +16,7 @@ class P2pSwapsCard extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _P2pSwapsCardState createState() => _P2pSwapsCardState();
+  State<P2pSwapsCard> createState() => _P2pSwapsCardState();
 }
 
 class _P2pSwapsCardState extends State<P2pSwapsCard> {
@@ -45,6 +45,7 @@ class _P2pSwapsCardState extends State<P2pSwapsCard> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _p2pSwapsListBloc.dispose();
     super.dispose();
   }
 
@@ -70,10 +71,18 @@ class _P2pSwapsCardState extends State<P2pSwapsCard> {
   }
 
   Future<void> _onDeleteSwapTapped(P2pSwap swap) async {
-    if (swap.mode == P2pSwapMode.htlc) {
-      await htlcSwapsService!.deleteSwap(swap.id);
-      _p2pSwapsListBloc.getSwaps();
-    }
+    showDialogWithNoAndYesOptions(
+        context: context,
+        title: 'Delete swap',
+        description:
+            'Are you sure you want to delete this swap? This action cannot be undone.',
+        onYesButtonPressed: () async {
+          if (swap.mode == P2pSwapMode.htlc) {
+            await htlcSwapsService!.deleteSwap(swap.id);
+          }
+          _p2pSwapsListBloc.getSwaps();
+          Navigator.of(context).pop();
+        });
   }
 
   Widget _getTable(List<P2pSwap> swaps) {
