@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:stacked/stacked.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/htlc/reclaim_htlc_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/htlc/unlock_htlc_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swap/htlc_swap_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
@@ -12,6 +13,7 @@ import 'package:zenon_syrius_wallet_flutter/utils/clipboard_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/extensions.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/format_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/p2p_swap_widgets/htlc_card.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/p2p_swap_widgets/htlc_swap_details_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/elevated_button.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/instruction_button.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/error_widget.dart';
@@ -32,7 +34,7 @@ class NativeP2pSwapModal extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _NativeP2pSwapModalState createState() => _NativeP2pSwapModalState();
+  State<NativeP2pSwapModal> createState() => _NativeP2pSwapModalState();
 }
 
 class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
@@ -48,6 +50,12 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
     super.initState();
     _htlcSwapBloc = HtlcSwapBloc(widget.swapId);
     _htlcSwapBloc.getDataPeriodically();
+  }
+
+  @override
+  void dispose() {
+    _htlcSwapBloc.dispose();
+    super.dispose();
   }
 
   @override
@@ -80,6 +88,9 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
         return _getActiveView(swap);
       case P2pSwapState.completed:
         return _getCompletedView(swap);
+      case P2pSwapState.reclaimable:
+      case P2pSwapState.unsuccessful:
+        return _getUnsuccessfulView(swap);
       default:
         return Container();
     }
@@ -208,6 +219,118 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
             ),
           ),
         ),
+        const SizedBox(
+          height: 25,
+        ),
+        HtlcSwapDetailsWidget(swap: swap),
+      ],
+    );
+  }
+
+  Widget _getUnsuccessfulView(HtlcSwap swap) {
+    final now = (DateTime.now().millisecondsSinceEpoch / 1000).round();
+    final expiration = swap.direction == P2pSwapDirection.outgoing
+        ? swap.initialHtlcExpirationTime
+        : swap.counterHtlcExpirationTime;
+    final remainingDuration = Duration(seconds: (expiration ?? 0) - now);
+    final isReclaimable = remainingDuration.inSeconds <= 0 &&
+        swap.state == P2pSwapState.reclaimable;
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const SizedBox(
+          height: 10.0,
+        ),
+        Container(
+          width: 72.0,
+          height: 72.0,
+          color: Colors.transparent,
+          child: SvgPicture.asset(
+            'assets/svg/ic_unsuccessful_symbol.svg',
+            color: AppColors.errorColor,
+          ),
+        ),
+        const SizedBox(
+          height: 30.0,
+        ),
+        Text(
+          isReclaimable || swap.state == P2pSwapState.unsuccessful
+              ? 'The swap was unsuccessful.'
+              : 'The swap was unsuccessful.\nPlease wait for your deposit to expire to reclaim your funds.',
+          style: const TextStyle(
+            fontSize: 16.0,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 25.0),
+        Container(
+          decoration: const BoxDecoration(
+              color: Color(0xff282828),
+              borderRadius: BorderRadius.all(Radius.circular(8.0))),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              children: [
+                if (remainingDuration.inSeconds > 0)
+                  TweenAnimationBuilder<Duration>(
+                    duration: remainingDuration,
+                    tween: Tween(begin: remainingDuration, end: Duration.zero),
+                    onEnd: () => setState(() {}),
+                    builder: (_, Duration d, __) {
+                      return Visibility(
+                        visible: d.inSeconds > 0,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 15.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Deposit expires in',
+                                style: TextStyle(
+                                    fontSize: 14.0,
+                                    color: AppColors.subtitleColor),
+                              ),
+                              Text(
+                                d.toString().split('.').first,
+                                style: const TextStyle(
+                                    fontSize: 14.0,
+                                    color: AppColors.subtitleColor),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                        swap.state == P2pSwapState.reclaimable
+                            ? 'Deposited amount'
+                            : 'Deposited amount (reclaimed)',
+                        style: const TextStyle(
+                            fontSize: 14.0, color: AppColors.subtitleColor)),
+                    Text(
+                      '${swap.fromAmount.addDecimals(swap.fromDecimals)} ${swap.fromSymbol}',
+                      style: const TextStyle(
+                          fontSize: 14.0, color: AppColors.subtitleColor),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (isReclaimable)
+          Padding(
+            padding: const EdgeInsets.only(top: 20.0),
+            child: _getReclaimButton(swap),
+          ),
+        const SizedBox(
+          height: 25,
+        ),
+        HtlcSwapDetailsWidget(swap: swap),
       ],
     );
   }
@@ -371,6 +494,45 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
       style: const TextStyle(
         fontSize: 14.0,
       ),
+    );
+  }
+
+  Widget _getReclaimButton(HtlcSwap swap) {
+    return ViewModelBuilder<ReclaimHtlcBloc>.reactive(
+      fireOnModelReadyOnce: true,
+      onModelReady: (model) {
+        model.stream.listen(
+          (event) async {
+            if (event is AccountBlockTemplate) {
+              swap.state = P2pSwapState.unsuccessful;
+              await htlcSwapsService!.storeSwap(swap);
+            }
+          },
+          onError: (error) {
+            setState(() {
+              _isSendingTransaction = false;
+            });
+          },
+        );
+      },
+      builder: (_, model, __) => InstructionButton(
+        text: 'Reclaim funds',
+        isEnabled: true,
+        isLoading: _isSendingTransaction,
+        loadingText: 'Reclaiming',
+        onPressed: () {
+          setState(() {
+            _isSendingTransaction = true;
+          });
+          model.reclaimHtlc(
+            id: swap.direction == P2pSwapDirection.outgoing
+                ? Hash.parse(swap.initialHtlcId)
+                : Hash.parse(swap.counterHtlcId!),
+            timeLocked: Address.parse(swap.selfAddress),
+          );
+        },
+      ),
+      viewModelBuilder: () => ReclaimHtlcBloc(),
     );
   }
 
