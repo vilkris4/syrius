@@ -48,28 +48,32 @@ class _SwapOptionsButtonState extends State<SwapOptionsButton> {
           ),
           child: Row(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.primaryText,
-                    textAlign: TextAlign.left,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(
-                    height: 8.0,
-                  ),
-                  Text(
-                    widget.secondaryText,
-                    textAlign: TextAlign.left,
-                    style: const TextStyle(
-                      color: AppColors.subtitleColor,
-                      fontSize: 14.0,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      widget.primaryText,
+                      textAlign: TextAlign.left,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                  ),
-                ],
+                    const SizedBox(
+                      height: 8.0,
+                    ),
+                    Text(
+                      widget.secondaryText,
+                      textAlign: TextAlign.left,
+                      style: const TextStyle(
+                        color: AppColors.subtitleColor,
+                        fontSize: 14.0,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const Spacer(),
+              const SizedBox(
+                width: 15.0,
+              ),
               Column(
                 children: const [
                   Icon(Icons.keyboard_arrow_right, size: 18.0),
