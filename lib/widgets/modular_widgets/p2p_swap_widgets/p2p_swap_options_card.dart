@@ -9,16 +9,16 @@ import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/swa
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs/dialogs.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/layout_scaffold/card_scaffold.dart';
 
-class SwapOptionsCard extends StatefulWidget {
-  const SwapOptionsCard({
+class P2pSwapOptionsCard extends StatefulWidget {
+  const P2pSwapOptionsCard({
     Key? key,
   }) : super(key: key);
 
   @override
-  State<SwapOptionsCard> createState() => _SwapOptionsCardState();
+  State<P2pSwapOptionsCard> createState() => _P2pSwapOptionsCardState();
 }
 
-class _SwapOptionsCardState extends State<SwapOptionsCard> {
+class _P2pSwapOptionsCardState extends State<P2pSwapOptionsCard> {
   bool _isSwapTutorialHovered = false;
 
   @override
@@ -30,7 +30,7 @@ class _SwapOptionsCardState extends State<SwapOptionsCard> {
   @override
   Widget build(BuildContext context) {
     return CardScaffold(
-      title: 'Swap Options',
+      title: 'P2P Swap Options',
       description: 'update this text',
       childBuilder: () => _getWidgetBody(context),
     );
