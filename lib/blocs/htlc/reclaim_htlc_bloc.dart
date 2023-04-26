@@ -8,7 +8,7 @@ import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 class ReclaimHtlcBloc extends BaseBloc<AccountBlockTemplate?> {
   void reclaimHtlc({
     required Hash id,
-    required Address? timeLocked,
+    required Address timeLocked,
   }) {
     try {
       addEvent(null);

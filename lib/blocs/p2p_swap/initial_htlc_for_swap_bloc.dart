@@ -19,6 +19,9 @@ class InitialHtlcForSwapBloc extends BaseBloc<HtlcInfo?> {
       final now = (DateTime.now().millisecondsSinceEpoch / 1000).round();
       final remainingDuration = Duration(seconds: htlc.expirationTime - now);
       if (remainingDuration < _minimumRequiredDuration) {
+        if (remainingDuration.inSeconds <= 0) {
+          throw 'This deposit has expired.';
+        }
         throw 'This deposit will expire too soon for a safe swap.';
       }
       addEvent(htlc);

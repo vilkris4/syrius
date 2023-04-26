@@ -117,47 +117,60 @@ class HtlcSwapsHandler {
       return;
     }
 
-    if (['Create', 'Unlock'].contains(blockData.function)) {
-      final swap = _tryGetSwapFromBlockData(blockData);
-      if (swap == null) {
+    final swap = _tryGetSwapFromBlockData(blockData);
+    if (swap == null) {
+      return;
+    }
+    switch (blockData.function) {
+      case 'Create':
+        if (swap.state == P2pSwapState.pending) {
+          swap.state = P2pSwapState.active;
+          await htlcSwapsService!.storeSwap(swap);
+        } else if (pairedBlock.hash.toString() != swap.initialHtlcId &&
+            swap.counterHtlcId == null) {
+          if (!_isValidCounterHtlc(pairedBlock, blockData, swap)) {
+            return;
+          }
+          swap.counterHtlcId = pairedBlock.hash.toString();
+          swap.toAmount = pairedBlock.amount;
+          swap.toTokenStandard = pairedBlock.token!.tokenStandard.toString();
+          swap.toDecimals = pairedBlock.token!.decimals;
+          swap.toSymbol = pairedBlock.token!.symbol;
+          swap.counterHtlcExpirationTime =
+              blockData.params['expirationTime'].toInt();
+          await htlcSwapsService!.storeSwap(swap);
+        }
         return;
-      }
-      switch (blockData.function) {
-        case 'Create':
-          if (swap.state == P2pSwapState.pending) {
-            swap.state = P2pSwapState.active;
-            await htlcSwapsService!.storeSwap(swap);
-          } else if (pairedBlock.hash.toString() != swap.initialHtlcId &&
-              swap.counterHtlcId == null) {
-            if (!_isValidCounterHtlc(pairedBlock, blockData, swap)) {
-              return;
-            }
-            swap.counterHtlcId = pairedBlock.hash.toString();
-            swap.toAmount = pairedBlock.amount;
-            swap.toTokenStandard = pairedBlock.token!.tokenStandard.toString();
-            swap.toDecimals = pairedBlock.token!.decimals;
-            swap.toSymbol = pairedBlock.token!.symbol;
-            swap.counterHtlcExpirationTime =
-                blockData.params['expirationTime'].toInt();
-            await htlcSwapsService!.storeSwap(swap);
+      case 'Unlock':
+        if (swap.preimage == null) {
+          if (!blockData.params.containsKey('preimage')) {
+            return;
           }
-          return;
-        case 'Unlock':
-          if (swap.preimage == null) {
-            if (!blockData.params.containsKey('preimage')) {
-              return;
-            }
-            swap.preimage =
-                FormatUtils.encodeHexString(blockData.params['preimage']);
-            await htlcSwapsService!.storeSwap(swap);
-          }
+          swap.preimage =
+              FormatUtils.encodeHexString(blockData.params['preimage']);
+          await htlcSwapsService!.storeSwap(swap);
+        }
 
-          if (swap.direction == P2pSwapDirection.incoming &&
-              blockData.params['id'].toString() == swap.initialHtlcId) {
-            swap.state = P2pSwapState.completed;
-            await htlcSwapsService!.storeSwap(swap);
-          }
-      }
+        if (swap.direction == P2pSwapDirection.incoming &&
+            blockData.params['id'].toString() == swap.initialHtlcId) {
+          swap.state = P2pSwapState.completed;
+          await htlcSwapsService!.storeSwap(swap);
+        }
+        return;
+      /*case 'Reclaim':
+        bool isSelfReclaim = false;
+        if (swap.direction == P2pSwapDirection.outgoing &&
+            blockData.params['id'].toString() == swap.initialHtlcId) {
+          isSelfReclaim = true;
+        } else if (swap.direction == P2pSwapDirection.incoming &&
+            blockData.params['id'].toString() == swap.counterHtlcId!) {
+          isSelfReclaim = true;
+        }
+        if (isSelfReclaim) {
+          swap.state = P2pSwapState.unsuccessful;
+          await htlcSwapsService!.storeSwap(swap);
+        }
+        return;*/
     }
   }
 

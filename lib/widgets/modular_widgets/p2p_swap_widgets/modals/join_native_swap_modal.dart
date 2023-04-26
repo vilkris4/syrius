@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:stacked/stacked.dart';
@@ -21,6 +19,7 @@ import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/p2p_swap_wid
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/instruction_button.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/error_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/exchange_rate_widget.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/important_text_container.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/amount_input_field.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/disabled_address_field.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/input_field.dart';
@@ -146,7 +145,10 @@ class _JoinNativeSwapModalState extends State<JoinNativeSwapModal> {
           visible: _initialHtlcError != null,
           child: Column(
             children: [
-              Text(_initialHtlcError ?? ''),
+              ImportantTextContainer(
+                text: _initialHtlcError ?? '',
+                showBorder: true,
+              ),
               const SizedBox(
                 height: 25.0,
               ),
@@ -226,9 +228,7 @@ class _JoinNativeSwapModalState extends State<JoinNativeSwapModal> {
           ],
         ),
         const SizedBox(height: 20.0),
-        const Divider(
-          color: Color(0xff373737),
-        ),
+        Divider(color: Colors.white.withOpacity(0.1)),
         const SizedBox(height: 20.0),
         LabeledInputContainer(
           labelText: 'You are sending',
@@ -293,16 +293,15 @@ class _JoinNativeSwapModalState extends State<JoinNativeSwapModal> {
           ),
         ),
         const SizedBox(height: 20.0),
-        const Divider(
-          color: Color(0xff373737),
-        ),
+        Divider(color: Colors.white.withOpacity(0.1)),
         const SizedBox(height: 25.0),
         _safeExpirationTime != null
             ? _getJoinSwapViewModel(tokenToReceive)
-            : const Text(
-                'Cannot join swap. The swap will expire too soon for a safe swap.',
-                textAlign: TextAlign.center,
-              ),
+            : const ImportantTextContainer(
+                text:
+                    'Cannot join swap. The swap will expire too soon for a safe swap.',
+                showBorder: true,
+              )
       ],
     );
   }

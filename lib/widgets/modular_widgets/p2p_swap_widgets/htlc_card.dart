@@ -6,7 +6,7 @@ import 'package:zenon_syrius_wallet_flutter/utils/color_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/extensions.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/format_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/icons/copy_to_clipboard_icon.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/p2p_swap_widgets/detail_row.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/loading_info_text.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
@@ -90,7 +90,7 @@ class HtlcCard extends StatefulWidget {
       );
 
   @override
-  _HtlcCardState createState() => _HtlcCardState();
+  State<HtlcCard> createState() => _HtlcCardState();
 }
 
 class _HtlcCardState extends State<HtlcCard>
@@ -251,7 +251,7 @@ class _HtlcCardState extends State<HtlcCard>
         child: Column(
           children: [
             const SizedBox(height: 20.0),
-            Container(height: 1, color: Colors.white.withOpacity(0.1)),
+            Divider(color: Colors.white.withOpacity(0.1)),
             const SizedBox(height: 20.0),
             _getDetailsList(),
           ],
@@ -265,13 +265,25 @@ class _HtlcCardState extends State<HtlcCard>
     final htlcId = Hash.parse(widget.htlcId!);
     final hashLock = Hash.parse(widget.hashLock!);
     children.add(_getExpirationRow(widget.expirationTime!));
-    children.add(_getDetailRow('Deposit ID', htlcId.toString(),
-        valueToShow: htlcId.toShortString()));
-    children.add(_getDetailRow('Token standard', widget.tokenStandard!));
-    children.add(_getDetailRow('Recipient', widget.recipient!,
-        valueToShow: _tryGetLabelForAddress(widget.recipient!)));
     children.add(
-      _getDetailRow('Hashlock', hashLock.toString(),
+      DetailRow(
+          label: 'Deposit ID',
+          value: htlcId.toString(),
+          valueToShow: htlcId.toShortString()),
+    );
+    children.add(
+      DetailRow(label: 'Token standard', value: widget.tokenStandard!),
+    );
+    children.add(
+      DetailRow(
+          label: 'Recipient',
+          value: widget.recipient!,
+          valueToShow: _tryGetLabelForAddress(widget.recipient!)),
+    );
+    children.add(
+      DetailRow(
+          label: 'Hashlock',
+          value: hashLock.toString(),
           valueToShow: hashLock.toShortString()),
     );
     return Column(
@@ -286,45 +298,20 @@ class _HtlcCardState extends State<HtlcCard>
     );
   }
 
-  Widget _getDetailRow(String label, String value,
-      {String? valueToShow, bool canBeCopied = true}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label,
-            style: const TextStyle(
-                fontSize: 12.0, color: AppColors.subtitleColor)),
-        Row(
-          children: [
-            Text(valueToShow ??= value,
-                style: const TextStyle(
-                    fontSize: 12.0, color: AppColors.subtitleColor)),
-            Visibility(
-              visible: canBeCopied,
-              child: CopyToClipboardIcon(
-                value,
-                iconColor: AppColors.subtitleColor,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                padding: const EdgeInsets.only(left: 8.0),
-              ),
-            ),
-          ],
-        )
-      ],
-    );
-  }
-
   Widget _getExpirationRow(int expirationTime) {
     final now = (DateTime.now().millisecondsSinceEpoch / 1000).round();
     final duration = Duration(seconds: expirationTime - now);
     if (duration.isNegative) {
-      return _getDetailRow('Expires in', 'Expired', canBeCopied: false);
+      return const DetailRow(
+          label: 'Expires in', value: 'Expired', canBeCopied: false);
     }
     return TweenAnimationBuilder<Duration>(
       duration: duration,
       tween: Tween(begin: duration, end: Duration.zero),
       builder: (_, Duration d, __) {
-        return _getDetailRow('Expires in', d.toString().split('.').first,
+        return DetailRow(
+            label: 'Expires in',
+            value: d.toString().split('.').first,
             canBeCopied: false);
       },
     );

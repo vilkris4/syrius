@@ -21,7 +21,7 @@ class ExchangeRateWidget extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _ExchangeRateWidgetState createState() => _ExchangeRateWidgetState();
+  State<ExchangeRateWidget> createState() => _ExchangeRateWidgetState();
 }
 
 class _ExchangeRateWidgetState extends State<ExchangeRateWidget> {
