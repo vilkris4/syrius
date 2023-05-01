@@ -16,6 +16,7 @@ class AmountInputField extends StatefulWidget {
   final Color? textColor;
   final Token? initialToken;
   final String hintText;
+  final bool enabled;
 
   const AmountInputField({
     required this.controller,
@@ -25,6 +26,7 @@ class AmountInputField extends StatefulWidget {
     this.textColor,
     this.initialToken,
     this.hintText = 'Amount',
+    this.enabled = true,
     Key? key,
   }) : super(key: key);
 
@@ -69,6 +71,7 @@ class _AmountInputFieldState extends State<AmountInputField> {
         suffixIcon: _getAmountSuffix(),
         hintText: widget.hintText,
         contentLeftPadding: widget.valuePadding ?? kContentPadding,
+        enabled: widget.enabled,
       ),
       onChanged: () => (widget.onChanged != null)
           ? widget.onChanged!(_selectedToken!, (_isInputValid()) ? true : false)
