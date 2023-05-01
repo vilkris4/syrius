@@ -55,7 +55,7 @@ class _P2pSwapsCardState extends State<P2pSwapsCard> {
         title: 'P2P Swaps',
         childStream: _p2pSwapsListBloc.stream,
         onCompletedStatusCallback: (data) => _getTable(data),
-        onRefreshPressed: () => _p2pSwapsListBloc.getSwaps(),
+        onRefreshPressed: () => _p2pSwapsListBloc.getData(),
         description:
             'This card displays a list of P2P swaps that have been created '
             'by or added to this wallet.');
@@ -80,7 +80,7 @@ class _P2pSwapsCardState extends State<P2pSwapsCard> {
           if (swap.mode == P2pSwapMode.htlc) {
             await htlcSwapsService!.deleteSwap(swap.id);
           }
-          _p2pSwapsListBloc.getSwaps();
+          _p2pSwapsListBloc.getData();
           Navigator.of(context).pop();
         });
   }
