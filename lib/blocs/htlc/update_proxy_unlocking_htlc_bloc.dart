@@ -13,8 +13,8 @@ class UpdateProxyUnlockingHtlcBloc extends BaseBloc<AccountBlockTemplate?> {
     try {
       addEvent(null);
       AccountBlockTemplate transactionParams = allowed
-          ? zenon!.embedded.htlc.allowProxy()
-          : zenon!.embedded.htlc.denyProxy();
+          ? zenon!.embedded.htlc.allowProxyUnlock()
+          : zenon!.embedded.htlc.denyProxyUnlock();
       KeyPair blockSigningKeyPair = kKeyStore!.getKeyPair(
         kDefaultAddressList.indexOf(address.toString()),
       );

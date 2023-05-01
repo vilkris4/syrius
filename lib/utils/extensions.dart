@@ -1,5 +1,12 @@
 import 'dart:math' show pow;
-import 'package:znn_sdk_dart/znn_sdk_dart.dart';
+
+extension StringExtensions on String {
+  String capitalize() {
+    return '${this[0].toUpperCase()}${toLowerCase().substring(1)}';
+  }
+
+  num toNum() => num.parse(this);
+}
 
 extension FixedNumDecimals on double {
   String toStringFixedNumDecimals(int numDecimals) {

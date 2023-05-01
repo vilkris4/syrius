@@ -416,8 +416,7 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
 
   Widget _getSwapButtonViewModel(HtlcSwap swap) {
     return ViewModelBuilder<CompleteHtlcSwapBloc>.reactive(
-      fireOnModelReadyOnce: true,
-      onModelReady: (model) {
+      onViewModelReady: (model) {
         model.stream.listen(
           (event) async {
             if (event is HtlcSwap) {

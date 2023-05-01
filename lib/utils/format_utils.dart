@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:hex/hex.dart';
 import 'package:intl/intl.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
-import 'package:znn_sdk_dart/znn_sdk_dart.dart';
+import 'package:zenon_syrius_wallet_flutter/utils/extensions.dart';
 
 class FormatUtils {
   static List<TextInputFormatter> getAmountTextInputFormatters(

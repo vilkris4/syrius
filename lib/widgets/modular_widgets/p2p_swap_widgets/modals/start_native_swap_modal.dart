@@ -222,7 +222,7 @@ class _StartNativeSwapModalState extends State<StartNativeSwapModal> {
 
   _getStartSwapViewModel() {
     return ViewModelBuilder<StartHtlcSwapBloc>.reactive(
-      onModelReady: (model) {
+      onViewModelReady: (model) {
         model.stream.listen(
           (event) async {
             if (event is HtlcSwap) {
