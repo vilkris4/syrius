@@ -35,26 +35,18 @@ class AutoUnlockHtlcWorker extends BaseBloc<WalletNotification> {
         if (swap == null || swap.preimage == null) {
           throw 'Invalid swap';
         }
-        KeyPair? keyPair;
-        if (kDefaultAddressList.contains(htlc.hashLocked.toString())) {
-          keyPair = kKeyStore!.getKeyPair(
-            kDefaultAddressList.indexOf(htlc.hashLocked.toString()),
-          );
-        } else {
+        if (!kDefaultAddressList.contains(htlc.hashLocked.toString())) {
           return;
-          /*  final canProxyUnlock =
-              await zenon!.embedded.htlc.getProxyUnlockStatus(htlc.hashLocked);
-          if (!canProxyUnlock) {
-            return;
-          } */
         }
-
+        KeyPair? keyPair = kKeyStore!.getKeyPair(
+          kDefaultAddressList.indexOf(htlc.hashLocked.toString()),
+        );
         AccountBlockTemplate transactionParams = zenon!.embedded.htlc
             .unlock(htlc.id, FormatUtils.decodeHexString(swap.preimage!));
         AccountBlockTemplate response =
             await AccountBlockUtils.createAccountBlock(
           transactionParams,
-          'complete P2P swap',
+          'complete swap',
           blockSigningKey: keyPair,
           waitForRequiredPlasma: true,
         );
@@ -70,9 +62,9 @@ class AutoUnlockHtlcWorker extends BaseBloc<WalletNotification> {
   void _sendErrorNotification(String errorText) {
     addEvent(
       WalletNotification(
-        title: 'Receive transaction failed',
+        title: 'Failed to complete swap',
         timestamp: DateTime.now().millisecondsSinceEpoch,
-        details: 'Failed to receive the transaction: $errorText',
+        details: 'Failed to complete the swap: $errorText',
         type: NotificationType.error,
       ),
     );
