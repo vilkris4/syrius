@@ -5,32 +5,20 @@ import 'package:zenon_syrius_wallet_flutter/utils/address_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
-class CreateHtlcBloc extends BaseBloc<AccountBlockTemplate?> {
-  void createHtlc({
-    required Address timeLocked,
-    required Token token,
-    required String amount,
-    required Address hashLocked,
-    required int expirationTime,
-    required int hashType,
-    required int keyMaxSize,
-    required List<int> hashLock,
+class ReclaimHtlcSwapFundsBloc extends BaseBloc<AccountBlockTemplate?> {
+  void reclaimFunds({
+    required Hash htlcId,
+    required Address selfAddress,
   }) {
     try {
       addEvent(null);
-      AccountBlockTemplate transactionParams = zenon!.embedded.htlc.create(
-        token,
-        amount.toNum().extractDecimals(token.decimals),
-        hashLocked,
-        expirationTime,
-        hashType,
-        keyMaxSize,
-        hashLock,
-      );
+      AccountBlockTemplate transactionParams =
+          zenon!.embedded.htlc.reclaim(htlcId);
       KeyPair blockSigningKeyPair = kKeyStore!.getKeyPair(
-        kDefaultAddressList.indexOf(timeLocked.toString()),
+        kDefaultAddressList.indexOf(selfAddress.toString()),
       );
-      AccountBlockUtils.createAccountBlock(transactionParams, 'create swap',
+      AccountBlockUtils.createAccountBlock(
+              transactionParams, 'reclaim swap funds',
               blockSigningKey: blockSigningKeyPair, waitForRequiredPlasma: true)
           .then(
         (response) {

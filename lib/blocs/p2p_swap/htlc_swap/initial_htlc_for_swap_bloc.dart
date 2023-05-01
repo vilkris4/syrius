@@ -16,6 +16,9 @@ class InitialHtlcForSwapBloc extends BaseBloc<HtlcInfo?> {
       if (kDefaultAddressList.contains(htlc.timeLocked.toString())) {
         throw 'Cannot join a swap that you have started.';
       }
+      if (htlcSwapsService!.getSwapByHtlcId(htlc.id.toString()) != null) {
+        throw 'This deposit is already used in another swap.';
+      }
       final now = (DateTime.now().millisecondsSinceEpoch / 1000).round();
       final remainingDuration = Duration(seconds: htlc.expirationTime - now);
       if (remainingDuration < _minimumRequiredDuration) {
