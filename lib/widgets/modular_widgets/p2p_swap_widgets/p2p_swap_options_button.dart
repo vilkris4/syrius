@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
 
-class SwapOptionsButton extends StatefulWidget {
+class P2pSwapOptionsButton extends StatefulWidget {
   final VoidCallback onClick;
   final String primaryText;
   final String secondaryText;
 
-  const SwapOptionsButton({
+  const P2pSwapOptionsButton({
     Key? key,
     required this.primaryText,
     required this.secondaryText,
@@ -14,10 +14,10 @@ class SwapOptionsButton extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _SwapOptionsButtonState createState() => _SwapOptionsButtonState();
+  _P2pSwapOptionsButtonState createState() => _P2pSwapOptionsButtonState();
 }
 
-class _SwapOptionsButtonState extends State<SwapOptionsButton> {
+class _P2pSwapOptionsButtonState extends State<P2pSwapOptionsButton> {
   @override
   Widget build(BuildContext context) {
     return Material(
