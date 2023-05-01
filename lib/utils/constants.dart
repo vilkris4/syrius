@@ -67,6 +67,7 @@ const String kGithubReleasesLink =
 const String kIncorrectPasswordNotificationTitle = 'Incorrect password';
 const String kUnlockFailedNotificationTitle = 'Unlock failed';
 const String kDefaultDateFormat = 'dd MMMM, yyyy';
+const String kDefaultDateTimeFormat = 'yyyy-MM-dd hh:mm a';
 
 // Key-value store
 const String kTextScalingKey = 'text_scaling_key';
