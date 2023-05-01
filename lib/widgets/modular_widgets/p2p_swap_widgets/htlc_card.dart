@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zenon_syrius_wallet_flutter/model/p2p_swap/htlc_swap.dart';
 import 'package:zenon_syrius_wallet_flutter/model/p2p_swap/p2p_swap.dart';
+import 'package:zenon_syrius_wallet_flutter/utils/address_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/color_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/extensions.dart';
@@ -12,6 +13,7 @@ import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
 class HtlcCard extends StatefulWidget {
   final String title;
+  final String sender;
   final String? htlcId;
   final String? hashLock;
   final int? expirationTime;
@@ -23,6 +25,7 @@ class HtlcCard extends StatefulWidget {
 
   const HtlcCard({
     required this.title,
+    required this.sender,
     required this.htlcId,
     required this.hashLock,
     required this.expirationTime,
@@ -39,6 +42,7 @@ class HtlcCard extends StatefulWidget {
   }) =>
       HtlcCard(
         title: 'You are sending',
+        sender: swap.selfAddress,
         htlcId: swap.direction == P2pSwapDirection.outgoing
             ? swap.initialHtlcId
             : swap.counterHtlcId,
@@ -58,6 +62,7 @@ class HtlcCard extends StatefulWidget {
   }) =>
       HtlcCard(
         title: 'You are receiving',
+        sender: swap.counterpartyAddress,
         htlcId: swap.direction == P2pSwapDirection.outgoing
             ? swap.counterHtlcId
             : swap.initialHtlcId,
@@ -79,6 +84,7 @@ class HtlcCard extends StatefulWidget {
   }) =>
       HtlcCard(
         title: title,
+        sender: htlc.timeLocked.toString(),
         htlcId: htlc.id.toString(),
         hashLock: FormatUtils.encodeHexString(htlc.hashLock),
         expirationTime: htlc.expirationTime,
@@ -276,9 +282,15 @@ class _HtlcCardState extends State<HtlcCard>
     );
     children.add(
       DetailRow(
+          label: 'Sender',
+          value: widget.sender,
+          valueToShow: AddressUtils.getLabel(widget.sender)),
+    );
+    children.add(
+      DetailRow(
           label: 'Recipient',
           value: widget.recipient!,
-          valueToShow: _tryGetLabelForAddress(widget.recipient!)),
+          valueToShow: AddressUtils.getLabel(widget.recipient!)),
     );
     children.add(
       DetailRow(
@@ -315,11 +327,5 @@ class _HtlcCardState extends State<HtlcCard>
             canBeCopied: false);
       },
     );
-  }
-
-  String _tryGetLabelForAddress(String address) {
-    return kDefaultAddressList.contains(address)
-        ? kAddressLabelMap[address]!
-        : address;
   }
 }
