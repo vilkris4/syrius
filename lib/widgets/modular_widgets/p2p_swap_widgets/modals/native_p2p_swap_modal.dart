@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:stacked/stacked.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/htlc/reclaim_htlc_bloc.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/htlc/unlock_htlc_bloc.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swap/htlc_swap_bloc.dart';
-import 'package:zenon_syrius_wallet_flutter/main.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swap/htlc_swap/reclaim_htlc_swap_funds_bloc.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swap/htlc_swap/complete_htlc_swap_bloc.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swap/htlc_swap/htlc_swap_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/model/p2p_swap/htlc_swap.dart';
 import 'package:zenon_syrius_wallet_flutter/model/p2p_swap/p2p_swap.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/clipboard_utils.dart';
+import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/extensions.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/format_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/p2p_swap_widgets/htlc_card.dart';
@@ -220,7 +220,7 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
           ),
         ),
         const SizedBox(
-          height: 25,
+          height: 20,
         ),
         HtlcSwapDetailsWidget(swap: swap),
       ],
@@ -324,7 +324,7 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
         ),
         if (isReclaimable)
           Padding(
-            padding: const EdgeInsets.only(top: 20.0),
+            padding: const EdgeInsets.fromLTRB(0.0, 20.0, 0.0, 5.0),
             child: _getReclaimButton(swap),
           ),
         const SizedBox(
@@ -415,16 +415,14 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
   }
 
   Widget _getSwapButtonViewModel(HtlcSwap swap) {
-    return ViewModelBuilder<UnlockHtlcBloc>.reactive(
+    return ViewModelBuilder<CompleteHtlcSwapBloc>.reactive(
       fireOnModelReadyOnce: true,
       onModelReady: (model) {
         model.stream.listen(
           (event) async {
-            if (event is AccountBlockTemplate) {
+            if (event is HtlcSwap) {
               _swapCompletedText =
                   'Swap completed. You will receive the funds shortly.';
-              swap.state = P2pSwapState.completed;
-              await htlcSwapsService!.storeSwap(swap);
             }
           },
           onError: (error) {
@@ -443,13 +441,10 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
           setState(() {
             _isSendingTransaction = true;
           });
-          model.unlockHtlc(
-              id: Hash.parse(swap.counterHtlcId!),
-              preimage: FormatUtils.decodeHexString(swap.preimage!),
-              hashLocked: Address.parse(swap.selfAddress));
+          model.completeHtlcSwap(swap: swap);
         },
       ),
-      viewModelBuilder: () => UnlockHtlcBloc(),
+      viewModelBuilder: () => CompleteHtlcSwapBloc(),
     );
   }
 
@@ -486,10 +481,8 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
   }
 
   Widget _getIncorrectAmountInstructions(int expirationTime) {
-    final expiration =
-        DateTime.fromMillisecondsSinceEpoch(expirationTime * 1000);
     return Text(
-      'If the token or the amount you are receiving is not what you have agreed upon, wait until your deposit expires to reclaim your funds.\nYour deposit will expire at ${expiration.toString().split('.').first}.',
+      'If the token or the amount you are receiving is not what you have agreed upon, wait until your deposit expires to reclaim your funds.\nYour deposit will expire at ${FormatUtils.formatDate(expirationTime * 1000, dateFormat: kDefaultDateTimeFormat)}.',
       textAlign: TextAlign.center,
       style: const TextStyle(
         fontSize: 14.0,
@@ -498,16 +491,11 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
   }
 
   Widget _getReclaimButton(HtlcSwap swap) {
-    return ViewModelBuilder<ReclaimHtlcBloc>.reactive(
+    return ViewModelBuilder<ReclaimHtlcSwapFundsBloc>.reactive(
       fireOnModelReadyOnce: true,
       onModelReady: (model) {
         model.stream.listen(
-          (event) async {
-            if (event is AccountBlockTemplate) {
-              swap.state = P2pSwapState.unsuccessful;
-              await htlcSwapsService!.storeSwap(swap);
-            }
-          },
+          null,
           onError: (error) {
             setState(() {
               _isSendingTransaction = false;
@@ -519,20 +507,20 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
         text: 'Reclaim funds',
         isEnabled: true,
         isLoading: _isSendingTransaction,
-        loadingText: 'Reclaiming',
+        loadingText: 'Reclaiming. This will take a moment.',
         onPressed: () {
           setState(() {
             _isSendingTransaction = true;
           });
-          model.reclaimHtlc(
-            id: swap.direction == P2pSwapDirection.outgoing
+          model.reclaimFunds(
+            htlcId: swap.direction == P2pSwapDirection.outgoing
                 ? Hash.parse(swap.initialHtlcId)
                 : Hash.parse(swap.counterHtlcId!),
-            timeLocked: Address.parse(swap.selfAddress),
+            selfAddress: Address.parse(swap.selfAddress),
           );
         },
       ),
-      viewModelBuilder: () => ReclaimHtlcBloc(),
+      viewModelBuilder: () => ReclaimHtlcSwapFundsBloc(),
     );
   }
 

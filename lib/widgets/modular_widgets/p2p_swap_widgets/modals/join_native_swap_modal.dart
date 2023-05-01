@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:stacked/stacked.dart';
 import 'package:zenon_syrius_wallet_flutter/blocs/dashboard/balance_bloc.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/htlc/create_htlc_bloc.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swap/initial_htlc_for_swap_bloc.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swap/htlc_swap/initial_htlc_for_swap_bloc.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/p2p_swap/htlc_swap/join_htlc_swap_bloc.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
 import 'package:zenon_syrius_wallet_flutter/model/p2p_swap/htlc_swap.dart';
 import 'package:zenon_syrius_wallet_flutter/model/p2p_swap/p2p_swap.dart';
-import 'package:zenon_syrius_wallet_flutter/utils/account_block_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/clipboard_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
@@ -16,6 +15,7 @@ import 'package:zenon_syrius_wallet_flutter/utils/format_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/input_validators.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/zts_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/p2p_swap_widgets/htlc_card.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/bullet_point_card.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/instruction_button.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/error_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/exchange_rate_widget.dart';
@@ -150,7 +150,7 @@ class _JoinNativeSwapModalState extends State<JoinNativeSwapModal> {
                 showBorder: true,
               ),
               const SizedBox(
-                height: 25.0,
+                height: 20.0,
               ),
             ],
           ),
@@ -294,7 +294,31 @@ class _JoinNativeSwapModalState extends State<JoinNativeSwapModal> {
         ),
         const SizedBox(height: 20.0),
         Divider(color: Colors.white.withOpacity(0.1)),
-        const SizedBox(height: 25.0),
+        if (_safeExpirationTime != null) const SizedBox(height: 20.0),
+        if (_safeExpirationTime != null)
+          BulletPointCard(
+            bulletPoints: [
+              RichText(
+                text: BulletPointCard.textSpan(
+                  'The counterparty has until ',
+                  children: [
+                    TextSpan(
+                        text: FormatUtils.formatDate(
+                            _safeExpirationTime! * 1000,
+                            dateFormat: kDefaultDateTimeFormat),
+                        style: const TextStyle(
+                            fontSize: 14.0, color: Colors.white)),
+                    BulletPointCard.textSpan(' to complete the swap.'),
+                  ],
+                ),
+              ),
+              RichText(
+                text: BulletPointCard.textSpan(
+                    'You can reclaim your funds if the counterparty fails to complete the swap.'),
+              ),
+            ],
+          ),
+        const SizedBox(height: 20.0),
         _safeExpirationTime != null
             ? _getJoinSwapViewModel(tokenToReceive)
             : const ImportantTextContainer(
@@ -307,41 +331,12 @@ class _JoinNativeSwapModalState extends State<JoinNativeSwapModal> {
   }
 
   _getJoinSwapViewModel(Token tokenToReceive) {
-    return ViewModelBuilder<CreateHtlcBloc>.reactive(
+    return ViewModelBuilder<JoinHtlcSwapBloc>.reactive(
       onModelReady: (model) {
         model.stream.listen(
           (event) async {
-            if (event is AccountBlockTemplate) {
-              final data = AccountBlockUtils.getDecodedBlockData(
-                  Definitions.htlc, event.data)!;
-              await htlcSwapsService!.storeSwap(HtlcSwap(
-                id: _initialHltc!.id.toString(),
-                type: P2pSwapType.native,
-                direction: P2pSwapDirection.incoming,
-                selfAddress: _selfAddress,
-                counterpartyAddress: _initialHltc!.timeLocked.toString(),
-                state: P2pSwapState.active,
-                startTime:
-                    (DateTime.now().millisecondsSinceEpoch / 1000).round(),
-                initialHtlcExpirationTime: _initialHltc!.expirationTime,
-                counterHtlcExpirationTime:
-                    data.params['expirationTime'].toInt(),
-                fromAmount: event.amount,
-                fromTokenStandard: _selectedToken.tokenStandard.toString(),
-                fromDecimals: _selectedToken.decimals,
-                fromSymbol: _selectedToken.symbol,
-                fromChain: P2pSwapChain.nom,
-                toChain: P2pSwapChain.nom,
-                toAmount: _initialHltc!.amount,
-                toTokenStandard: tokenToReceive.tokenStandard.toString(),
-                toDecimals: tokenToReceive.decimals,
-                toSymbol: tokenToReceive.symbol,
-                hashLock: FormatUtils.encodeHexString(_initialHltc!.hashLock),
-                initialHtlcId: _initialHltc!.id.toString(),
-                counterHtlcId: event.hash.toString(),
-                hashType: _initialHltc!.hashType,
-              ));
-              widget.onJoinedSwap.call(_initialHltc!.id.toString());
+            if (event is HtlcSwap) {
+              widget.onJoinedSwap.call(event.id.toString());
             }
           },
           onError: (error) {
@@ -351,37 +346,36 @@ class _JoinNativeSwapModalState extends State<JoinNativeSwapModal> {
           },
         );
       },
-      builder: (_, model, __) => _getJoinSwapButton(model),
-      viewModelBuilder: () => CreateHtlcBloc(),
+      builder: (_, model, __) => _getJoinSwapButton(model, tokenToReceive),
+      viewModelBuilder: () => JoinHtlcSwapBloc(),
     );
   }
 
-  Widget _getJoinSwapButton(CreateHtlcBloc model) {
+  Widget _getJoinSwapButton(JoinHtlcSwapBloc model, Token tokenToReceive) {
     return InstructionButton(
       text: 'Join swap',
       instructionText: 'Input an amount to send',
       loadingText: 'Sending transaction',
       isEnabled: _isInputValid(),
       isLoading: _isLoading,
-      onPressed: () => _onJoinButtonPressed(model),
+      onPressed: () => _onJoinButtonPressed(model, tokenToReceive),
     );
   }
 
-  void _onJoinButtonPressed(CreateHtlcBloc model) async {
+  void _onJoinButtonPressed(
+      JoinHtlcSwapBloc model, Token tokenToReceive) async {
     setState(() {
       _isLoading = true;
     });
-
-    model.createHtlc(
-      timeLocked: Address.parse(_selfAddress),
-      token: _selectedToken,
-      amount: _amountController.text,
-      hashLocked: _initialHltc!.timeLocked,
-      expirationTime: _safeExpirationTime!,
-      hashType: _initialHltc!.hashType,
-      keyMaxSize: _initialHltc!.keyMaxSize,
-      hashLock: _initialHltc!.hashLock,
-    );
+    model.joinHtlcSwap(
+        initialHtlc: _initialHltc!,
+        fromToken: _selectedToken,
+        toToken: tokenToReceive,
+        fromAmount: _amountController.text,
+        swapType: P2pSwapType.native,
+        fromChain: P2pSwapChain.nom,
+        toChain: P2pSwapChain.nom,
+        counterHtlcExpirationTime: _safeExpirationTime!);
   }
 
   int? _calculateSafeExpirationTime(int initialHtlcExpiration) {
