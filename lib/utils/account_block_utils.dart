@@ -120,6 +120,52 @@ class AccountBlockUtils {
     return null;
   }
 
+  // Returns a list of AccountBlocks that are newer than a given timestamp.
+  // The list is returned in ascending order.
+  static Future<List<AccountBlock>> getBlocksAfterTime(
+      Address address, int time) async {
+    final List<AccountBlock> blocks = [];
+    int pageIndex = 0;
+    while (true) {
+      final fetched = await zenon!.ledger
+          .getAccountBlocksByPage(address, pageIndex: pageIndex, pageSize: 100);
+
+      final lastBlockConfirmation = fetched.list!.last.confirmationDetail;
+      if (lastBlockConfirmation == null ||
+          lastBlockConfirmation.momentumTimestamp <= time) {
+        for (final block in fetched.list!) {
+          final confirmation = block.confirmationDetail;
+          if (confirmation == null || confirmation.momentumTimestamp <= time) {
+            break;
+          }
+          blocks.add(block);
+        }
+        break;
+      }
+
+      blocks.addAll(fetched.list!);
+
+      if (fetched.more == null || !fetched.more!) {
+        break;
+      }
+
+      pageIndex += 1;
+    }
+
+    return blocks.reversed.toList();
+  }
+
+  static Future<int?> getTimeForBlockHeight(Address address, int height) async {
+    if (height >= 1) {
+      final block =
+          await zenon!.ledger.getAccountBlocksByHeight(address, height, 1);
+      if (block.count != null && block.count! > 0) {
+        return block.list?.first.confirmationDetail?.momentumTimestamp;
+      }
+    }
+    return null;
+  }
+
   static void _addEventToPowGeneratingStatusBloc(PowStatus event) =>
       sl.get<PowGeneratingStatusBloc>().addEvent(event);
 }
