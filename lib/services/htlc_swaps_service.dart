@@ -38,10 +38,9 @@ class HtlcSwapsService {
     return swaps;
   }
 
-  List<HtlcSwap> getPendingAndActiveSwaps() {
+  List<HtlcSwap> getSwapsByState(List<P2pSwapState> states) {
     return _htlcSwapsBox!.values
-        .where((e) => [P2pSwapState.pending, P2pSwapState.active]
-            .contains(HtlcSwap.fromJson(jsonDecode(e)).state))
+        .where((e) => states.contains(HtlcSwap.fromJson(jsonDecode(e)).state))
         .map((e) => HtlcSwap.fromJson(jsonDecode(e)))
         .toList();
   }
@@ -56,10 +55,11 @@ class HtlcSwapsService {
     }
   }
 
-  HtlcSwap? getSwapByCounterHtlcId(String htlcId) {
+  HtlcSwap? getSwapByHtlcId(String htlcId) {
     try {
-      final swap = _htlcSwapsBox!.values.firstWhereOrNull(
-          (e) => HtlcSwap.fromJson(jsonDecode(e)).counterHtlcId == htlcId);
+      final swap = _htlcSwapsBox!.values.firstWhereOrNull((e) =>
+          (HtlcSwap.fromJson(jsonDecode(e)).initialHtlcId == htlcId) ||
+          HtlcSwap.fromJson(jsonDecode(e)).counterHtlcId == htlcId);
       return swap != null ? HtlcSwap.fromJson(jsonDecode(swap)) : null;
     } on HiveError {
       return null;
@@ -68,8 +68,7 @@ class HtlcSwapsService {
 
   HtlcSwap? getSwapById(String id) {
     try {
-      final swap = _htlcSwapsBox!.values
-          .firstWhereOrNull((e) => HtlcSwap.fromJson(jsonDecode(e)).id == id);
+      final swap = _htlcSwapsBox!.get(id);
       return swap != null ? HtlcSwap.fromJson(jsonDecode(swap)) : null;
     } on HiveError {
       return null;
