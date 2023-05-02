@@ -1,13 +1,9 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/notifications_bloc.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/pow_generating_status_bloc.dart';
-import 'package:zenon_syrius_wallet_flutter/blocs/transfer/transfer_widgets_balance_bloc.dart';
+import 'package:zenon_syrius_wallet_flutter/blocs/blocs.dart';
 import 'package:zenon_syrius_wallet_flutter/main.dart';
-import 'package:zenon_syrius_wallet_flutter/model/block_data.dart';
-import 'package:zenon_syrius_wallet_flutter/model/database/notification_type.dart';
-import 'package:zenon_syrius_wallet_flutter/model/database/wallet_notification.dart';
+import 'package:zenon_syrius_wallet_flutter/model/model.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/format_utils.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
@@ -70,10 +66,10 @@ class AccountBlockUtils {
               WalletNotification(
                 title: 'Account-block published',
                 timestamp: DateTime.now().millisecondsSinceEpoch,
-                details: 'Account-block type: ' +
-                    FormatUtils.extractNameFromEnum<BlockTypeEnum>(
-                      BlockTypeEnum.values[response.blockType],
-                    ),
+                details:
+                    'Account-block type: ${FormatUtils.extractNameFromEnum<BlockTypeEnum>(
+                  BlockTypeEnum.values[response.blockType],
+                )}',
                 type: NotificationType.paymentSent,
               ),
             );

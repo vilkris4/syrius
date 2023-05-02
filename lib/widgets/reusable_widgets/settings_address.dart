@@ -10,13 +10,7 @@ import 'package:zenon_syrius_wallet_flutter/utils/app_colors.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/notification_utils.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/loading_button.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/error_widget.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/material_icon_button.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/outlined_button.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/settings_button.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/icons/copy_to_clipboard_icon.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_field/input_field.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/widgets.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
 
 class SettingsAddress extends StatefulWidget {
@@ -30,7 +24,7 @@ class SettingsAddress extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _SettingsAddressState createState() => _SettingsAddressState();
+  State<SettingsAddress> createState() => _SettingsAddressState();
 }
 
 class _SettingsAddressState extends State<SettingsAddress> {
@@ -49,9 +43,13 @@ class _SettingsAddressState extends State<SettingsAddress> {
   @override
   void initState() {
     super.initState();
-    _labelController.text = kAddressLabelMap[widget.address]!;
     _proxyUnlockFuture = zenon!.embedded.htlc
         .getProxyUnlockStatus(Address.parse(widget.address!));
+    if (kAddressLabelMap[widget.address] != null) {
+      _labelController.text = kAddressLabelMap[widget.address]!;
+    } else {
+      _labelController.text = 'Address 1';
+    }
   }
 
   @override
@@ -94,10 +92,10 @@ class _SettingsAddressState extends State<SettingsAddress> {
                 children: [
                   Text(
                     _labelController.text,
-                    style: Theme.of(context).textTheme.bodyText1!.copyWith(
+                    style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                           color: Theme.of(context)
                               .textTheme
-                              .bodyText1!
+                              .bodyLarge!
                               .color!
                               .withOpacity(0.7),
                         ),
@@ -160,7 +158,7 @@ class _SettingsAddressState extends State<SettingsAddress> {
                     setState(() {});
                   },
                   inputtedTextStyle:
-                      Theme.of(context).textTheme.bodyText2!.copyWith(
+                      Theme.of(context).textTheme.bodyMedium!.copyWith(
                             color: AppColors.znnColor,
                           ),
                   enabledBorder: OutlineInputBorder(
@@ -225,7 +223,7 @@ class _SettingsAddressState extends State<SettingsAddress> {
   Text _getAddressTextWidget() {
     return Text(
       widget.address!,
-      style: Theme.of(context).textTheme.bodyText2,
+      style: Theme.of(context).textTheme.bodyMedium,
     );
   }
 
@@ -341,7 +339,7 @@ class _SettingsAddressState extends State<SettingsAddress> {
               child: LoadingButton.icon(
                 key: _proxyUnlockButtonKey,
                 minimumSize: const Size(25.0, 25.0),
-                icon: const Icon(Octicons.primitive_dot, color: Colors.red),
+                icon: const Icon(Icons.circle, color: Colors.red),
                 outlineColor: Theme.of(context).colorScheme.primary,
                 onPressed: () {},
               ),

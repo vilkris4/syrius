@@ -28,11 +28,11 @@ class UpdateProxyUnlockingHtlcBloc extends BaseBloc<AccountBlockTemplate?> {
         },
       ).onError(
         (error, stackTrace) {
-          addError(error.toString());
+          addError(error.toString(), stackTrace);
         },
       );
-    } catch (e) {
-      addError(e);
+    } catch (e, stackTrace) {
+      addError(e, stackTrace);
     }
   }
 }

@@ -16,8 +16,8 @@ class P2pSwapsListBloc extends PeriodicP2pSwapBaseBloc<List<P2pSwap>> {
     try {
       final data = _getSwaps();
       addEvent(data);
-    } catch (e) {
-      addError(e);
+    } catch (e, stackTrace) {
+      addError(e, stackTrace);
     }
   }
 

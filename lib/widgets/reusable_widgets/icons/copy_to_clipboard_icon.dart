@@ -33,34 +33,34 @@ class _CopyToClipboardIcon extends State<CopyToClipboardIcon> {
   @override
   Widget build(BuildContext context) {
     return RawMaterialButton(
-        materialTapTargetSize: widget.materialTapTargetSize,
-        hoverColor: widget.hoverColor,
-        constraints: const BoxConstraints.tightForFinite(),
-        padding: widget.padding,
-        child: AnimatedCrossFade(
-          duration: const Duration(milliseconds: 100),
-          firstChild:
-              Icon(widget.icon, color: widget.iconColor, size: _iconSize),
-          secondChild:
-              Icon(Icons.check, color: AppColors.znnColor, size: _iconSize),
-          crossFadeState:
-              _isCopied ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-        ),
-        shape: const CircleBorder(),
-        onPressed: () {
-          if (!_isCopied) {
-            Timer(const Duration(seconds: 3), () {
-              if (mounted) {
-                setState(() {
-                  _isCopied = false;
-                });
-              }
-            });
-            setState(() {
-              _isCopied = true;
-            });
-          }
-          ClipboardUtils.copyToClipboard(widget.textToBeCopied!, context);
-        });
+      materialTapTargetSize: widget.materialTapTargetSize,
+      hoverColor: widget.hoverColor,
+      constraints: const BoxConstraints.tightForFinite(),
+      padding: widget.padding,
+      shape: const CircleBorder(),
+      onPressed: () {
+        if (!_isCopied) {
+          Timer(const Duration(seconds: 3), () {
+            if (mounted) {
+              setState(() {
+                _isCopied = false;
+              });
+            }
+          });
+          setState(() {
+            _isCopied = true;
+          });
+        }
+        ClipboardUtils.copyToClipboard(widget.textToBeCopied!, context);
+      },
+      child: AnimatedCrossFade(
+        duration: const Duration(milliseconds: 100),
+        firstChild: Icon(widget.icon, color: widget.iconColor, size: _iconSize),
+        secondChild:
+            Icon(Icons.check, color: AppColors.znnColor, size: _iconSize),
+        crossFadeState:
+            _isCopied ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+      ),
+    );
   }
 }

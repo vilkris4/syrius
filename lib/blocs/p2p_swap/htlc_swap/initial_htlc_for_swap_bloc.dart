@@ -28,8 +28,8 @@ class InitialHtlcForSwapBloc extends BaseBloc<HtlcInfo?> {
         throw 'This deposit will expire too soon for a safe swap.';
       }
       addEvent(htlc);
-    } catch (e) {
-      addError(e);
+    } catch (e, stackTrace) {
+      addError(e, stackTrace);
     }
   }
 }

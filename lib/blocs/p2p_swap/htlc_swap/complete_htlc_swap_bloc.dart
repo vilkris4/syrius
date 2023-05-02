@@ -33,11 +33,11 @@ class CompleteHtlcSwapBloc extends BaseBloc<HtlcSwap?> {
         },
       ).onError(
         (error, stackTrace) {
-          addError(error.toString());
+          addError(error.toString(), stackTrace);
         },
       );
-    } catch (e) {
-      addError(e);
+    } catch (e, stackTrace) {
+      addError(e, stackTrace);
     }
   }
 }

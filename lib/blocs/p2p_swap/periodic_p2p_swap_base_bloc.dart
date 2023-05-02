@@ -13,8 +13,8 @@ abstract class PeriodicP2pSwapBaseBloc<T> extends BaseBloc<T> {
     try {
       T data = makeCall();
       addEvent(data);
-    } catch (e) {
-      addError(e);
+    } catch (e, stackTrace) {
+      addError(e, stackTrace);
     } finally {
       if (_autoRefresher == null) {
         _autoRefresher = _getAutoRefreshTimer();
