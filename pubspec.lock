@@ -1330,8 +1330,8 @@ packages:
     description:
       path: "."
       ref: spork_htlc
-      resolved-ref: "5239cc3a3209610a119b8f0b8070894d42b40e50"
-      url: "https://github.com/sol-sanctum/znn_sdk_dart.git"
+      resolved-ref: abf887d30311494d7e6cd87b2d74b87f55d37abd
+      url: "https://github.com/vilkris4/znn_sdk_dart.git"
     source: git
     version: "0.0.4"
 sdks:
