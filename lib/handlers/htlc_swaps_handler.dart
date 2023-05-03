@@ -88,6 +88,11 @@ class HtlcSwapsHandler {
     if (swap == null) {
       return;
     }
+
+    if (swap.chainId != pairedBlock.chainIdentifier) {
+      return;
+    }
+
     switch (blockData.function) {
       case 'Create':
         if (swap.state == P2pSwapState.pending) {

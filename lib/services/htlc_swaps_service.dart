@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:collection/collection.dart';
 import 'package:hive/hive.dart';
-import 'package:zenon_syrius_wallet_flutter/model/p2p_swap/htlc_swap.dart';
-import 'package:zenon_syrius_wallet_flutter/model/p2p_swap/p2p_swap.dart';
+import 'package:zenon_syrius_wallet_flutter/model/model.dart';
 import 'package:zenon_syrius_wallet_flutter/utils/constants.dart';
+import 'package:zenon_syrius_wallet_flutter/utils/global.dart';
 
 class HtlcSwapsService {
   static Box? _htlcSwapsBox;
@@ -32,24 +32,19 @@ class HtlcSwapsService {
   }
 
   List<HtlcSwap> getAllSwaps() {
-    final swaps = _htlcSwapsBox!.values
-        .map((e) => HtlcSwap.fromJson(jsonDecode(e)))
-        .toList();
-    return swaps;
+    return _swapsForCurrentChainId;
   }
 
   List<HtlcSwap> getSwapsByState(List<P2pSwapState> states) {
-    return _htlcSwapsBox!.values
-        .where((e) => states.contains(HtlcSwap.fromJson(jsonDecode(e)).state))
-        .map((e) => HtlcSwap.fromJson(jsonDecode(e)))
+    return _swapsForCurrentChainId
+        .where((e) => states.contains(e.state))
         .toList();
   }
 
   HtlcSwap? getSwapByHashLock(String hashLock) {
     try {
-      final swap = _htlcSwapsBox!.values.firstWhereOrNull(
-          (e) => HtlcSwap.fromJson(jsonDecode(e)).hashLock == hashLock);
-      return swap != null ? HtlcSwap.fromJson(jsonDecode(swap)) : null;
+      return _swapsForCurrentChainId
+          .firstWhereOrNull((e) => e.hashLock == hashLock);
     } on HiveError {
       return null;
     }
@@ -57,10 +52,8 @@ class HtlcSwapsService {
 
   HtlcSwap? getSwapByHtlcId(String htlcId) {
     try {
-      final swap = _htlcSwapsBox!.values.firstWhereOrNull((e) =>
-          (HtlcSwap.fromJson(jsonDecode(e)).initialHtlcId == htlcId) ||
-          HtlcSwap.fromJson(jsonDecode(e)).counterHtlcId == htlcId);
-      return swap != null ? HtlcSwap.fromJson(jsonDecode(swap)) : null;
+      return _swapsForCurrentChainId.firstWhereOrNull(
+          (e) => e.initialHtlcId == htlcId || e.counterHtlcId == htlcId);
     } on HiveError {
       return null;
     }
@@ -68,8 +61,7 @@ class HtlcSwapsService {
 
   HtlcSwap? getSwapById(String id) {
     try {
-      final swap = _htlcSwapsBox!.get(id);
-      return swap != null ? HtlcSwap.fromJson(jsonDecode(swap)) : null;
+      return _swapsForCurrentChainId.firstWhereOrNull((e) => e.id == id);
     } on HiveError {
       return null;
     }
@@ -91,4 +83,14 @@ class HtlcSwapsService {
 
   Future<void> deleteSwap(String swapId) async =>
       await _htlcSwapsBox!.delete(swapId);
+
+  List<HtlcSwap> get _swapsForCurrentChainId {
+    return kNodeChainId != null
+        ? _htlcSwapsBox!.values
+            .where(
+                (e) => HtlcSwap.fromJson(jsonDecode(e)).chainId == kNodeChainId)
+            .map((e) => HtlcSwap.fromJson(jsonDecode(e)))
+            .toList()
+        : [];
+  }
 }

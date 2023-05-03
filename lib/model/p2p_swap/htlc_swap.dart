@@ -11,6 +11,7 @@ class HtlcSwap extends P2pSwap {
 
   HtlcSwap({
     required id,
+    required chainId,
     required type,
     required direction,
     required selfAddress,
@@ -36,6 +37,7 @@ class HtlcSwap extends P2pSwap {
     this.preimage,
   }) : super(
           id: id,
+          chainId: chainId,
           type: type,
           mode: P2pSwapMode.htlc,
           direction: direction,

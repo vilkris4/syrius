@@ -29,6 +29,7 @@ enum P2pSwapChain {
 
 class P2pSwap {
   final String id;
+  final int chainId;
   final P2pSwapType type;
   final P2pSwapMode mode;
   final P2pSwapDirection direction;
@@ -49,6 +50,7 @@ class P2pSwap {
 
   P2pSwap(
       {required this.id,
+      required this.chainId,
       required this.type,
       required this.mode,
       required this.direction,
@@ -69,6 +71,7 @@ class P2pSwap {
 
   P2pSwap.fromJson(Map<String, dynamic> json)
       : id = json['id'],
+        chainId = json['chainId'],
         type = P2pSwapType.values.byName(json['type']),
         mode = P2pSwapMode.values.byName(json['mode']),
         direction = P2pSwapDirection.values.byName(json['direction']),
@@ -89,6 +92,7 @@ class P2pSwap {
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        'chainId': chainId,
         'type': type.name,
         'mode': mode.name,
         'direction': direction.name,

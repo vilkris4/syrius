@@ -47,6 +47,7 @@ class StartHtlcSwapBloc extends BaseBloc<HtlcSwap?> {
         (response) async {
           final swap = HtlcSwap(
             id: response.hash.toString(),
+            chainId: response.chainIdentifier,
             type: swapType,
             direction: P2pSwapDirection.outgoing,
             selfAddress: selfAddress.toString(),

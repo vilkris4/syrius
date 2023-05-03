@@ -102,6 +102,7 @@ class NodeUtils {
       Future.delayed(const Duration(seconds: 30))
           .then((value) => NotificationUtils.sendNodeSyncingNotification());
       _initListenForUnreceivedAccountBlocks(allResponseBroadcaster);
+      kNodeChainId = await getNodeChainIdentifier();
     });
   }
 
