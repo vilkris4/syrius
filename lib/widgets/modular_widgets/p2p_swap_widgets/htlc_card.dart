@@ -123,9 +123,9 @@ class _HtlcCardState extends State<HtlcCard>
       duration: _animationDuration,
       curve: _animationCurve,
       child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xff282828),
-          borderRadius: BorderRadius.all(Radius.circular(8.0)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary,
+          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
         ),
         child: widget.htlcId == null ? _getWaitingBody() : _getWidgetBody(),
       ),

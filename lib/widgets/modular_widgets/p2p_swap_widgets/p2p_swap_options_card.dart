@@ -24,8 +24,6 @@ class P2pSwapOptionsCard extends StatefulWidget {
 }
 
 class _P2pSwapOptionsCardState extends State<P2pSwapOptionsCard> {
-  bool _isSwapTutorialHovered = false;
-
   @override
   void initState() {
     super.initState();
@@ -102,30 +100,24 @@ class _P2pSwapOptionsCardState extends State<P2pSwapOptionsCard> {
         ),
         MouseRegion(
           cursor: SystemMouseCursors.click,
-          onEnter: (_) => setState(() => _isSwapTutorialHovered = true),
-          onExit: (_) => setState(() => _isSwapTutorialHovered = false),
           child: GestureDetector(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+              children: const [
                 Text(
                   'View swap tutorial',
                   style: TextStyle(
-                    color: _isSwapTutorialHovered
-                        ? Colors.white
-                        : AppColors.subtitleColor,
+                    color: AppColors.subtitleColor,
                     fontSize: 14.0,
                   ),
                 ),
-                const SizedBox(
+                SizedBox(
                   width: 3.0,
                 ),
                 Icon(
                   Icons.open_in_new,
                   size: 18.0,
-                  color: _isSwapTutorialHovered
-                      ? Colors.white
-                      : AppColors.subtitleColor,
+                  color: AppColors.subtitleColor,
                 ),
               ],
             ),

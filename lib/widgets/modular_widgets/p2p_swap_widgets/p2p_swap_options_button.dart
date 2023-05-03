@@ -14,13 +14,14 @@ class P2pSwapOptionsButton extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _P2pSwapOptionsButtonState createState() => _P2pSwapOptionsButtonState();
+  State<P2pSwapOptionsButton> createState() => _P2pSwapOptionsButtonState();
 }
 
 class _P2pSwapOptionsButtonState extends State<P2pSwapOptionsButton> {
   @override
   Widget build(BuildContext context) {
     return Material(
+      color: Theme.of(context).colorScheme.primaryContainer,
       borderRadius: BorderRadius.circular(
         8.0,
       ),
@@ -55,7 +56,7 @@ class _P2pSwapOptionsButtonState extends State<P2pSwapOptionsButton> {
                     Text(
                       widget.primaryText,
                       textAlign: TextAlign.left,
-                      style: Theme.of(context).textTheme.titleLarge,
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(
                       height: 8.0,

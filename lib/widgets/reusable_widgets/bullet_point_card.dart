@@ -20,9 +20,9 @@ class BulletPointCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xff333333),
-        borderRadius: BorderRadius.all(Radius.circular(8.0)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).hoverColor,
+        borderRadius: const BorderRadius.all(Radius.circular(8.0)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20.0),

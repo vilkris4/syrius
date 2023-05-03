@@ -29,6 +29,8 @@ class _P2pSwapsListItemState extends State<P2pSwapsListItem> {
   @override
   Widget build(BuildContext context) {
     return Material(
+      color: Theme.of(context).colorScheme.primaryContainer,
+      elevation: 1.0,
       borderRadius: BorderRadius.circular(
         8.0,
       ),
@@ -38,18 +40,6 @@ class _P2pSwapsListItemState extends State<P2pSwapsListItem> {
         child: Container(
           height: 56.0,
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          decoration: BoxDecoration(
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                offset: const Offset(0.0, 4),
-                blurRadius: 6,
-              ),
-            ],
-            borderRadius: BorderRadius.circular(
-              8.0,
-            ),
-          ),
           child: Row(
             children: [
               Expanded(

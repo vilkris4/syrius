@@ -15,7 +15,7 @@ class ImportantTextContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xff282828),
+        color: Theme.of(context).colorScheme.primary,
         border: showBorder
             ? Border.all(
                 width: 1.0,
