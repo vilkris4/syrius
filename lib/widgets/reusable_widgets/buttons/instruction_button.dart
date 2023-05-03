@@ -23,7 +23,7 @@ class InstructionButton extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _InstructionButtonState createState() => _InstructionButtonState();
+  State<InstructionButton> createState() => _InstructionButtonState();
 }
 
 class _InstructionButtonState extends State<InstructionButton> {
@@ -32,6 +32,12 @@ class _InstructionButtonState extends State<InstructionButton> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
+        onPressed:
+            (widget.isEnabled && !widget.isLoading) ? widget.onPressed : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.znnColor,
+          disabledBackgroundColor: AppColors.znnColor.withOpacity(0.1),
+        ),
         child: AnimatedCrossFade(
           duration: Duration(milliseconds: widget.isLoading ? 1000 : 10),
           firstCurve: Curves.easeInOut,
@@ -41,7 +47,7 @@ class _InstructionButtonState extends State<InstructionButton> {
               opacity: widget.isEnabled ? 1.0 : 0.3,
               child: Text(
                 widget.isEnabled ? widget.text : (widget.instructionText ?? ''),
-                style: Theme.of(context).textTheme.headline6,
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
           ),
@@ -52,12 +58,6 @@ class _InstructionButtonState extends State<InstructionButton> {
           crossFadeState: widget.isLoading
               ? CrossFadeState.showSecond
               : CrossFadeState.showFirst,
-        ),
-        onPressed:
-            (widget.isEnabled && !widget.isLoading) ? widget.onPressed : null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.znnColor,
-          disabledBackgroundColor: AppColors.znnColor.withOpacity(0.1),
         ),
       ),
     );

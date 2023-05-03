@@ -4,8 +4,7 @@ import 'package:zenon_syrius_wallet_flutter/main.dart';
 import 'package:zenon_syrius_wallet_flutter/model/p2p_swap/p2p_swap.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/p2p_swap_widgets/modals/native_p2p_swap_modal.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/modular_widgets/p2p_swap_widgets/p2p_swaps_list_item.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/dialogs.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/layout_scaffold/card_scaffold.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/widgets.dart';
 
 class P2pSwapsCard extends StatefulWidget {
   final VoidCallback onStepperNotificationSeeMorePressed;
@@ -54,7 +53,9 @@ class _P2pSwapsCardState extends State<P2pSwapsCard> {
     return CardScaffold<List<P2pSwap>>(
         title: 'P2P Swaps',
         childStream: _p2pSwapsListBloc.stream,
-        onCompletedStatusCallback: (data) => _getTable(data),
+        onCompletedStatusCallback: (data) => data.isEmpty
+            ? const SyriusErrorWidget('No P2P swaps')
+            : _getTable(data),
         onRefreshPressed: () => _p2pSwapsListBloc.getData(),
         description:
             'This card displays a list of P2P swaps that have been created '
@@ -77,11 +78,11 @@ class _P2pSwapsCardState extends State<P2pSwapsCard> {
         description:
             'Are you sure you want to delete this swap? This action cannot be undone.',
         onYesButtonPressed: () async {
+          Navigator.of(context).pop();
           if (swap.mode == P2pSwapMode.htlc) {
             await htlcSwapsService!.deleteSwap(swap.id);
           }
           _p2pSwapsListBloc.getData();
-          Navigator.of(context).pop();
         });
   }
 

@@ -21,10 +21,7 @@ import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/buttons/ins
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/error_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/exchange_rate_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/important_text_container.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_fields/amount_input_field.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_fields/disabled_address_field.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_fields/input_field.dart';
-import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_fields/labeled_input_container.dart';
+import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/input_fields/input_fields.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/loading_widget.dart';
 import 'package:zenon_syrius_wallet_flutter/widgets/reusable_widgets/modals/base_modal.dart';
 import 'package:znn_sdk_dart/znn_sdk_dart.dart';
@@ -117,11 +114,6 @@ class _JoinNativeSwapModalState extends State<JoinNativeSwapModal> {
             validator: (value) => InputValidators.checkHash(value),
             controller: _depositIdController,
             suffixIcon: RawMaterialButton(
-              child: const Icon(
-                Icons.content_paste,
-                color: AppColors.darkHintTextColor,
-                size: 15.0,
-              ),
               shape: const CircleBorder(),
               onPressed: () => ClipboardUtils.pasteToClipboard(
                 context,
@@ -129,6 +121,11 @@ class _JoinNativeSwapModalState extends State<JoinNativeSwapModal> {
                   _depositIdController.text = value;
                   setState(() {});
                 },
+              ),
+              child: const Icon(
+                Icons.content_paste,
+                color: AppColors.darkHintTextColor,
+                size: 15.0,
               ),
             ),
             suffixIconConstraints: const BoxConstraints(
@@ -163,7 +160,7 @@ class _JoinNativeSwapModalState extends State<JoinNativeSwapModal> {
 
   _getHtlcViewModel() {
     return ViewModelBuilder<InitialHtlcForSwapBloc>.reactive(
-      onModelReady: (model) {
+      onViewModelReady: (model) {
         model.stream.listen(
           (event) async {
             if (event is HtlcInfo) {

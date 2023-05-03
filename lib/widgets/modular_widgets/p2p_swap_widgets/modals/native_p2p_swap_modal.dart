@@ -153,7 +153,8 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
           color: Colors.transparent,
           child: SvgPicture.asset(
             'assets/svg/ic_completed_symbol.svg',
-            color: AppColors.znnColor,
+            colorFilter:
+                const ColorFilter.mode(AppColors.znnColor, BlendMode.srcIn),
           ),
         ),
         const SizedBox(
@@ -247,7 +248,8 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
           color: Colors.transparent,
           child: SvgPicture.asset(
             'assets/svg/ic_unsuccessful_symbol.svg',
-            color: AppColors.errorColor,
+            colorFilter:
+                const ColorFilter.mode(AppColors.errorColor, BlendMode.srcIn),
           ),
         ),
         const SizedBox(
@@ -264,9 +266,9 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
         ),
         const SizedBox(height: 25.0),
         Container(
-          decoration: const BoxDecoration(
-              color: Color(0xff282828),
-              borderRadius: BorderRadius.all(Radius.circular(8.0))),
+          decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              borderRadius: const BorderRadius.all(Radius.circular(8.0))),
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -461,7 +463,7 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
             }),
             child: const Center(
               child: Text(
-                'I’m receiving the wrong token or amount.',
+                'I\'m receiving the wrong token or amount.',
                 style: TextStyle(
                   fontSize: 14.0,
                   color: AppColors.subtitleColor,
@@ -491,8 +493,7 @@ class _NativeP2pSwapModalState extends State<NativeP2pSwapModal> {
 
   Widget _getReclaimButton(HtlcSwap swap) {
     return ViewModelBuilder<ReclaimHtlcSwapFundsBloc>.reactive(
-      fireOnModelReadyOnce: true,
-      onModelReady: (model) {
+      onViewModelReady: (model) {
         model.stream.listen(
           null,
           onError: (error) {

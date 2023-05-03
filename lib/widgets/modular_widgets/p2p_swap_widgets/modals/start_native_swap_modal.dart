@@ -114,11 +114,6 @@ class _StartNativeSwapModalState extends State<StartNativeSwapModal> {
                     validator: (value) => _validateCounterpartyAddress(value),
                     controller: _counterpartyAddressController,
                     suffixIcon: RawMaterialButton(
-                      child: const Icon(
-                        Icons.content_paste,
-                        color: AppColors.darkHintTextColor,
-                        size: 15.0,
-                      ),
                       shape: const CircleBorder(),
                       onPressed: () {
                         ClipboardUtils.pasteToClipboard(context,
@@ -127,6 +122,11 @@ class _StartNativeSwapModalState extends State<StartNativeSwapModal> {
                           setState(() {});
                         });
                       },
+                      child: const Icon(
+                        Icons.content_paste,
+                        color: AppColors.darkHintTextColor,
+                        size: 15.0,
+                      ),
                     ),
                     suffixIconConstraints: const BoxConstraints(
                       maxWidth: 45.0,
