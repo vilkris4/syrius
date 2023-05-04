@@ -82,7 +82,7 @@ class InitUtils {
     await _setWalletVersion();
     await htlcSwapsService!
         .openBoxes(kKeyStore!.getKeyPair(0).getPrivateKey()!);
-    sl<HtlcSwapsHandler>().run();
+    sl<HtlcSwapsHandler>().runPeriodically();
     kWalletInitCompleted = true;
   }
 

@@ -18,7 +18,7 @@ class HtlcSwapsHandler {
     return _instance!;
   }
 
-  Future<void> run() async {
+  Future<void> runPeriodically() async {
     final unresolvedSwaps = htlcSwapsService!.getSwapsByState(
         [P2pSwapState.pending, P2pSwapState.active, P2pSwapState.reclaimable]);
     if (unresolvedSwaps.isNotEmpty) {
@@ -32,7 +32,7 @@ class HtlcSwapsHandler {
     sl<AutoUnlockHtlcWorker>().autoUnlock();
 
     Future.delayed(const Duration(seconds: 5), () async {
-      run();
+      runPeriodically();
     });
   }
 
